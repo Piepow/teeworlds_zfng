@@ -139,7 +139,9 @@ public:
 
 		const IConsole::CCommandInfo *m_pRconCmdToSend;
 
-		void Reset();
+		bool m_WasInfected;
+
+		void Reset(bool ChoseToDisconnect = true);
 	};
 
 	CClient m_aClients[MAX_CLIENTS];
@@ -277,6 +279,10 @@ public:
 	virtual void SnapFreeID(int ID);
 	virtual void *SnapNewItem(int Type, int ID, int Size);
 	void SnapSetStaticsize(int ItemType, int Size);
+
+	void RememberInfection(int ClientID);
+	void ForgetAllInfections();
+	bool WasClientInfectedBefore(int ClientID);
 };
 
 #endif

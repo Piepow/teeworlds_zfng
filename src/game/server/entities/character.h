@@ -53,7 +53,7 @@ public:
 	bool IsFalseSpike(int Team, int spike_flag);
 
 	void Hit(int Killer, int Weapon);
-	bool TakeDamage(vec2 Force, int Dmg, int From, int Weapon);
+	bool TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Freeze = true);
 	void TakeHammerHit(CCharacter* pFrom);
 
 	bool Spawn(class CPlayer *pPlayer, vec2 Pos);

@@ -663,6 +663,11 @@ void CGameContext::OnClientConnected(int ClientID)
 	//players[client_id].init(client_id);
 	//players[client_id].client_id = client_id;
 
+	if (m_pController->IsInfection() && m_pController->IsInfectionStarted())
+	{
+		m_apPlayers[ClientID]->StartInfection();
+	}
+
 	(void)m_pController->CheckTeamBalance();
 
 #ifdef CONF_DEBUG

@@ -10,6 +10,11 @@ class CGameControllerZFNG2 : public IGameController
 public:
 	CGameControllerZFNG2(class CGameContext* pGameServer);
 	CGameControllerZFNG2(class CGameContext* pGameServer, CConfiguration& pConfig);
+
+	virtual bool IsTeamplay() const;
+	virtual bool UseFakeTeams();
+	virtual bool IsInfection() const;
+
 	virtual void Tick();
 	virtual void Snap(int SnappingClient);
 	virtual void OnCharacterSpawn(class CCharacter *pChr);

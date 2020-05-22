@@ -5,10 +5,15 @@
 
 #include <game/server/entity.h>
 
+enum {
+	LASER_FREEZE,
+	LASER_INSTA
+};
+
 class CLaser : public CEntity
 {
 public:
-	CLaser(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, float StartEnergy, int Owner);
+	CLaser(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, float StartEnergy, int Owner, int Type = LASER_FREEZE);
 
 	virtual void Reset();
 	virtual void Tick();
@@ -26,6 +31,7 @@ private:
 	int m_Bounces;
 	int m_EvalTick;
 	int m_Owner;
+	int m_Type;
 };
 
 #endif

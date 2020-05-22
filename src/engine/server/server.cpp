@@ -281,7 +281,7 @@ void CServerBan::ConBanExt(IConsole::IResult *pResult, void *pUser)
 }
 
 
-void CServer::CClient::Reset()
+void CServer::CClient::Reset(bool ChoseToDisconnect)
 {
 	// reset input
 	for(int i = 0; i < 200; i++)
@@ -296,6 +296,12 @@ void CServer::CClient::Reset()
 	m_Score = 0;
 	m_Version = -1;
 	m_UnknownFlags = 0;
+
+	// If the client chose to disconnect, then reset some things
+	if (ChoseToDisconnect)
+	{
+		m_WasInfected = 0;
+	}
 }
 
 CServer::CServer() : m_DemoRecorder(&m_SnapshotDelta)
@@ -487,6 +493,7 @@ int CServer::Init()
 		m_aClients[i].m_Traffic = 0;
 		m_aClients[i].m_TrafficSince = 0;
 		m_aClients[i].m_uiGameID = GAME_ID_INVALID;
+		m_aClients[i].m_WasInfected = 0;
 	}
 
 	m_CurrentGameTick = 0;
@@ -1859,7 +1866,11 @@ int CServer::Run()
 							continue;
 
 						SendMap(c);
-						m_aClients[c].Reset();
+
+						// Client did not chose to disconnect, the map was just
+						// changed
+						m_aClients[c].Reset(false);
+
 						m_aClients[c].m_State = CClient::STATE_CONNECTING;
 					}
 
@@ -2535,3 +2546,20 @@ int main(int argc, const char **argv) // ignore_convention
 	return 0;
 }
 
+void CServer::RememberInfection(int ClientID)
+{
+	m_aClients[ClientID].m_WasInfected = true;
+}
+
+void CServer::ForgetAllInfections()
+{
+	for(int i = 0; i < MAX_CLIENTS; i++)
+	{
+		m_aClients[i].m_WasInfected = false;
+	}
+}
+
+bool CServer::WasClientInfectedBefore(int ClientID)
+{
+	return m_aClients[ClientID].m_WasInfected;
+}

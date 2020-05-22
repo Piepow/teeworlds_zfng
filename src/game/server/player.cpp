@@ -22,17 +22,19 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_LastActionTick = Server()->Tick();
 	m_TeamChangeTick = Server()->Tick();
 
+	m_InfectionStartTick = -1;
+
 	ResetStats();
 
 	m_ChatSpamCount = 0;
-	
+
 	m_Emotion = EMOTE_NORMAL;
 	m_EmotionDuration = 0;
 
 	m_ClientVersion = eClientVersion::CLIENT_VERSION_NORMAL;
-	
+
 	m_UnknownPlayerFlag = 0;
-	
+
 	memset(m_SnappingClients, -1, sizeof(m_SnappingClients));
 	m_SnappingClients[0].id = ClientID;
 	m_SnappingClients[0].distance = 0;
@@ -111,7 +113,10 @@ void CPlayer::Tick()
 		}
 		else if(m_Spawning && m_RespawnTick <= Server()->Tick())
 			TryRespawn();
-		
+
+		if (!IsInfected())
+			m_HumanTime++;
+
 		if(m_EmotionDuration != 0) --m_EmotionDuration;
 	}
 	else
@@ -149,7 +154,7 @@ void CPlayer::Snap(int SnappingClient)
 #endif
 	if(!Server()->ClientIngame(m_ClientID))
 		return;
-	
+
 	int ClientID = m_ClientID;
 	if (SnappingClient > -1 && GameServer()->m_apPlayers[SnappingClient] && !GameServer()->m_apPlayers[SnappingClient]->IsSnappingClient(GetCID(), GameServer()->m_apPlayers[SnappingClient]->m_ClientVersion, ClientID)) return;
 
@@ -160,20 +165,24 @@ void CPlayer::Snap(int SnappingClient)
 	StrToInts(&pClientInfo->m_Name0, 4, Server()->ClientName(m_ClientID));
 	StrToInts(&pClientInfo->m_Clan0, 3, Server()->ClientClan(m_ClientID));
 	pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
-	if(GameServer()->m_pController->UseFakeTeams() && m_pCharacter && m_pCharacter->IsFrozen()){
-		StrToInts(&pClientInfo->m_Skin0, 6, "pinky");
-		pClientInfo->m_UseCustomColor = m_TeeInfos.m_UseCustomColor;
-		pClientInfo->m_ColorBody = 0;
-		pClientInfo->m_ColorFeet = m_TeeInfos.m_ColorFeet;
-	} 
-	else 
-	{
-		StrToInts(&pClientInfo->m_Skin0, 6, m_TeeInfos.m_SkinName);
+
+	StrToInts(&pClientInfo->m_Skin0, 6, m_TeeInfos.m_SkinName);
+	if (GameServer()->m_pController->IsInfection()) {
+		if (IsInfected()) {
+			pClientInfo->m_UseCustomColor = true;
+			pClientInfo->m_ColorBody = 3866368;
+			pClientInfo->m_ColorFeet = 65414;
+		} else {
+			pClientInfo->m_UseCustomColor = true;
+			pClientInfo->m_ColorBody = 1559776;
+			pClientInfo->m_ColorFeet = 9298431;
+		}
+	} else {
 		pClientInfo->m_UseCustomColor = m_TeeInfos.m_UseCustomColor;
 		pClientInfo->m_ColorBody = m_TeeInfos.m_ColorBody;
 		pClientInfo->m_ColorFeet = m_TeeInfos.m_ColorFeet;
 	}
-	
+
 	CNetObj_PlayerInfo *pPlayerInfo = static_cast<CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, ClientID, sizeof(CNetObj_PlayerInfo)));
 	if(!pPlayerInfo)
 		return;
@@ -181,7 +190,7 @@ void CPlayer::Snap(int SnappingClient)
 	pPlayerInfo->m_Latency = SnappingClient == -1 ? m_Latency.m_Min : GameServer()->m_apPlayers[SnappingClient]->m_aActLatency[m_ClientID];
 	pPlayerInfo->m_Local = 0;
 	pPlayerInfo->m_ClientID = ClientID;
-	pPlayerInfo->m_Score = m_Score + ((GameServer()->m_pController->UseFakeTeams() && !GameServer()->m_pController->IsGameOver()) ? (GetTeam() * 10000) : 0);
+	pPlayerInfo->m_Score = m_Score;
 	pPlayerInfo->m_Team = (!GameServer()->m_pController->UseFakeTeams() || m_Team == TEAM_SPECTATORS) ? m_Team : 0;
 
 	if(m_ClientID == SnappingClient)
@@ -192,7 +201,7 @@ void CPlayer::Snap(int SnappingClient)
 		CNetObj_SpectatorInfo *pSpectatorInfo = static_cast<CNetObj_SpectatorInfo *>(Server()->SnapNewItem(NETOBJTYPE_SPECTATORINFO, ClientID, sizeof(CNetObj_SpectatorInfo)));
 		if(!pSpectatorInfo)
 			return;
-		
+
 		pSpectatorInfo->m_SpectatorID = m_SpectatorID;
 		if(SnappingClient > -1 && !GameServer()->m_apPlayers[SnappingClient]->IsSnappingClient(m_SpectatorID, GameServer()->m_apPlayers[SnappingClient]->m_ClientVersion, pSpectatorInfo->m_SpectatorID))
 			pSpectatorInfo->m_SpectatorID = m_SpectatorID;
@@ -383,7 +392,7 @@ void CPlayer::CalcScore(){
 		m_Score = m_Stats.m_Kills + m_Stats.m_Unfreezes - m_Stats.m_Hits;
 		//TODO: make this configurable
 		m_Score += (m_Stats.m_GrabsNormal * g_Config.m_SvPlayerScoreSpikeNormal) + (m_Stats.m_GrabsTeam * g_Config.m_SvPlayerScoreSpikeTeam) + (m_Stats.m_GrabsFalse * g_Config.m_SvPlayerScoreSpikeFalse) + (m_Stats.m_GrabsGold * g_Config.m_SvPlayerScoreSpikeGold) - (m_Stats.m_Deaths * g_Config.m_SvPlayerScoreSpikeNormal);
-		m_Score -= m_Stats.m_Teamkills;	
+		m_Score -= m_Stats.m_Teamkills;
 	}
 }
 
@@ -413,7 +422,7 @@ bool CPlayer::AddSnappingClient(int RealID, float Distance, char ClientVersion, 
 				else highestDistance = m_SnappingClients[i].distance;
 			}
 		}
-		
+
 		if (id > -1 && highestDistance > Distance) {
 			m_SnappingClients[id].id = RealID;
 			m_SnappingClients[id].distance = Distance;
@@ -438,7 +447,7 @@ bool CPlayer::AddSnappingClient(int RealID, float Distance, char ClientVersion, 
 					else highestDistance = m_SnappingClients[i].distance;
 				}
 			}
-			
+
 			if (id > -1 && highestDistance > Distance) {
 				m_SnappingClients[id].id = RealID;
 				m_SnappingClients[id].distance = Distance;
@@ -488,7 +497,7 @@ int CPlayer::GetRealIDFromSnappingClients(int SnapID) {
 		if (m_SnappingClients[SnapID].id != 0xFFFFFFFF) return m_SnappingClients[SnapID].id;
 	}
 	else {
-		if (MAX_CLIENTS > DDNET_CLIENT_MAX_CLIENTS) {			
+		if (MAX_CLIENTS > DDNET_CLIENT_MAX_CLIENTS) {
 			if (m_SnappingClients[SnapID].id != 0xFFFFFFFF) return m_SnappingClients[SnapID].id;
 		}
 		else return SnapID;
@@ -510,4 +519,15 @@ void CPlayer::FakeSnap(int PlayerID) {
 		StrToInts(&pClientInfo->m_Clan0, 3, "");
 		StrToInts(&pClientInfo->m_Skin0, 6, "default");
 	}
+}
+
+bool CPlayer::IsInfected()
+{
+	return GetTeam() == TEAM_BLUE;
+}
+
+void CPlayer::StartInfection()
+{
+	m_InfectionStartTick = Server()->Tick();
+	SetTeam(TEAM_BLUE);
 }

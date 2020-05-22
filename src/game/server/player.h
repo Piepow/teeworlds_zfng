@@ -20,10 +20,13 @@ public:
 
 	void Init(int CID);
 
+	bool IsInfected();
+	void StartInfection();
+
 	void TryRespawn();
 	void Respawn();
 	void SetTeam(int Team, bool DoChatMsg=true);
-	
+
 	//doesnt kill the character
 	void SetTeamSilent(int Team);
 	int GetTeam() const { return m_Team; };
@@ -47,7 +50,7 @@ public:
 	int m_DDNetVersion;
 
 	int m_UnknownPlayerFlag;
-	
+
 	struct sPlayerStats{
 		//core stats
 		int m_NumJumped;
@@ -57,8 +60,8 @@ public:
 		int m_NumTeeCollisions;
 		//other stats
 		int m_NumFreezeTicks;
-		int m_NumEmotes;		
-	
+		int m_NumEmotes;
+
 		//score things
 		int m_Kills; //kills made by weapon
 		int m_GrabsNormal; //kills made by grabbing oponents into spikes - normal spikes
@@ -71,7 +74,7 @@ public:
 		int m_Teamkills;
 		int m_Unfreezes; //number of actual unfreezes of teammates
 		int m_UnfreezingHammerHits; //number of hammers to a frozen teammate
-		
+
 		int m_Shots; //the shots a player made
 	} m_Stats;
 
@@ -109,7 +112,7 @@ public:
 
 	//how often did we spam
 	int m_ChatSpamCount;
-	
+
 	//---------------------------------------------------------
 	// this is used for snapping so we know how we can clip the view for the player
 	vec2 m_ViewPos;
@@ -124,7 +127,7 @@ public:
 	int m_SpectatorID;
 
 	bool m_IsReady;
-	
+
 	int m_Emotion;
 	long long m_EmotionDuration;
 
@@ -157,6 +160,10 @@ public:
 	bool m_ForceBalanced;
 	int m_LastActionTick;
 	int m_TeamChangeTick;
+
+	int m_HumanTime;
+	int m_InfectionStartTick;
+
 	struct
 	{
 		int m_TargetX;
@@ -185,7 +192,7 @@ private:
 	bool m_Spawning;
 	int m_ClientID;
 	int m_Team;
-	
+
 	void CalcScore();
 };
 

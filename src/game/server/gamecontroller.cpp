@@ -438,11 +438,11 @@ bool IGameController::IsFriendlyFire(int ClientID1, int ClientID2)
 	if(ClientID1 == ClientID2)
 		return false;
 
+	if(!GameServer()->m_apPlayers[ClientID1] || !GameServer()->m_apPlayers[ClientID2])
+		return false;
+
 	if(IsTeamplay())
 	{
-		if(!GameServer()->m_apPlayers[ClientID1] || !GameServer()->m_apPlayers[ClientID2])
-			return false;
-
 		if(GameServer()->m_apPlayers[ClientID1]->GetTeam() == GameServer()->m_apPlayers[ClientID2]->GetTeam())
 			return true;
 	}
@@ -607,6 +607,11 @@ void IGameController::Tick()
 bool IGameController::IsTeamplay() const
 {
 	return m_GameFlags&GAMEFLAG_TEAMS;
+}
+
+bool IGameController::IsInfection() const
+{
+	return false;
 }
 
 void IGameController::Snap(int SnappingClient)
@@ -852,5 +857,10 @@ void IGameController::ShuffleTeams()
 }
 
 bool IGameController::UseFakeTeams(){
+	return false;
+}
+
+bool IGameController::IsInfectionStarted()
+{
 	return false;
 }
