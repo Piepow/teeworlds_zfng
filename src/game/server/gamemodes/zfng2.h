@@ -33,6 +33,7 @@ public:
 
 	virtual void Tick();
 	virtual void Snap(int SnappingClient);
+	virtual bool OnEntity(int Index, vec2 Pos);
 	virtual void OnCharacterSpawn(class CCharacter *pChr);
 	virtual int OnCharacterDeath(class CCharacter *pVictim, class CPlayer *pKiller, int Weapon);
 
@@ -40,6 +41,7 @@ public:
 	virtual void DoWincheck();
 
 	virtual void PostReset();
+
 protected:
 	virtual void StartRound();
 	virtual void EndRound();
@@ -51,5 +53,12 @@ private:
 		int& NumInfected,
 		int& NumMinimumInfected
 	);
+
+	vec2 m_aFlagStandPositions[2];
+	class CFlag* m_pInfectionFlag;
+	class CFlagStand* m_apFlagStands[2];
+	void SpawnInfectionFlag();
+	void RemoveInfectionFlag();
+	void SpawnFlagStand(int Team);
 };
 #endif

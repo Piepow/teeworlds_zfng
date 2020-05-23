@@ -1,6 +1,8 @@
 /* (c) KeksTW    */
 #include "zfng2.h"
 #include "../entities/character.h"
+#include "../entities/flag.h"
+#include "../entities/flag_stand.h"
 #include "../player.h"
 #include "../fng2define.h"
 #include <engine/shared/config.h>
@@ -56,12 +58,17 @@ void CGameControllerZFNG2::SetGameState(EGameState GameState)
 			break;
 		case IGS_WAITING_FOR_INFECTION:
 			m_GameState = GameState;
-			m_GameStateTimer = Server()->TickSpeed() * 10;
+			m_GameStateTimer = Server()->TickSpeed() * 5;
 			IGameController::StartRound();
 			break;
 		case IGS_WAITING_FOR_INFECTED_FLAG:
 			m_GameState = GameState;
-			m_GameStateTimer = Server()->TickSpeed() * 60 * 2;
+			m_GameStateTimer = Server()->TickSpeed() * 2;
+			break;
+		case IGS_NORMAL:
+			SpawnInfectionFlag();
+			m_GameState = GameState;
+			m_GameStateTimer = TIMER_INFINITE;
 			break;
 	}
 }
@@ -104,7 +111,6 @@ void CGameControllerZFNG2::Tick()
 				SetGameState(IGS_WAITING_FOR_INFECTED_FLAG);
 				break;
 			case IGS_WAITING_FOR_INFECTED_FLAG:
-				// TODO: Spawn flag
 				SetGameState(IGS_NORMAL);
 				break;
 		}
@@ -133,7 +139,7 @@ void CGameControllerZFNG2::Tick()
 					str_format(
 						aBuf, sizeof aBuf,
 						"Starting infection in %d seconds",
-						10 - ((TICK - m_RoundStartTick) / TICK_SPEED)
+						5 - ((TICK - m_RoundStartTick) / TICK_SPEED)
 					);
 					m_Broadcaster.SetBroadcast(-1, aBuf, 10);
 					break;
@@ -246,6 +252,25 @@ void CGameControllerZFNG2::Snap(int SnappingClient)
 	IGameController::Snap(SnappingClient);
 }
 
+bool CGameControllerZFNG2::OnEntity(int Index, vec2 Pos)
+{
+	if (IGameController::OnEntity(Index, Pos))
+		return true;
+
+	switch (Index) {
+		case ENTITY_FLAGSTAND_RED:
+			m_aFlagStandPositions[TEAM_RED] = Pos;
+			SpawnFlagStand(TEAM_RED);
+			return true;
+		case ENTITY_FLAGSTAND_BLUE:
+			m_aFlagStandPositions[TEAM_BLUE] = Pos;
+			SpawnFlagStand(TEAM_BLUE);
+			return true;
+	}
+
+	return false;
+}
+
 void CGameControllerZFNG2::OnCharacterSpawn(class CCharacter *pChr)
 {
 	// default health
@@ -316,6 +341,7 @@ void CGameControllerZFNG2::PostReset() {
 void CGameControllerZFNG2::StartRound()
 {
 	IGameController::StartRound();
+	RemoveInfectionFlag();
 	SetGameState(IGS_WAITING_FOR_PLAYERS);
 }
 
@@ -354,4 +380,31 @@ void CGameControllerZFNG2::CountPlayers(
 		NumMinimumInfected = 1;
 	else
 		NumMinimumInfected = 2;
+}
+
+void CGameControllerZFNG2::SpawnInfectionFlag()
+{
+	if (m_aFlagStandPositions[TEAM_INFECTED] != NULL) {
+		m_pInfectionFlag = new CFlag(&GameServer()->m_World, TEAM_INFECTED);
+		vec2 StandPos = m_aFlagStandPositions[TEAM_INFECTED];
+		m_pInfectionFlag->m_StandPos = StandPos;
+		m_pInfectionFlag->m_Pos = StandPos;
+		GameServer()->m_World.InsertEntity(m_pInfectionFlag);
+	}
+}
+
+void CGameControllerZFNG2::RemoveInfectionFlag()
+{
+	if (m_pInfectionFlag != NULL)
+		GameServer()->m_World.DestroyEntity(m_pInfectionFlag);
+
+	m_pInfectionFlag = NULL;
+}
+
+void CGameControllerZFNG2::SpawnFlagStand(int Team)
+{
+	vec2 StandPos = m_aFlagStandPositions[Team];
+	m_apFlagStands[Team] = new CFlagStand(&GameServer()->m_World);
+	m_apFlagStands[Team]->m_Pos = StandPos;
+	GameServer()->m_World.InsertEntity(m_apFlagStands[Team]);
 }

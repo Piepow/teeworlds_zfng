@@ -26,17 +26,23 @@ void CFlag::Reset()
 void CFlag::TickPaused()
 {
 	++m_DropTick;
-	if(m_GrabTick)
+	if (m_GrabTick)
 		++m_GrabTick;
 }
 
 void CFlag::Snap(int SnappingClient)
 {
-	if(NetworkClipped(SnappingClient))
+	if (NetworkClipped(SnappingClient))
 		return;
 
-	CNetObj_Flag *pFlag = (CNetObj_Flag *)Server()->SnapNewItem(NETOBJTYPE_FLAG, m_Team, sizeof(CNetObj_Flag));
-	if(!pFlag)
+	CNetObj_Flag *pFlag =
+		(CNetObj_Flag *)Server()->SnapNewItem(
+			NETOBJTYPE_FLAG,
+			m_Team,
+			sizeof(CNetObj_Flag)
+		);
+
+	if (pFlag == NULL)
 		return;
 
 	pFlag->m_X = (int)m_Pos.x;

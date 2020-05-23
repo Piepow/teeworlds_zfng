@@ -764,13 +764,6 @@ void CCharacter::Die(int Killer, int Weapon)
 	GameServer()->m_World.RemoveEntity(this);
 	GameServer()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = 0;
 	GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCID());
-
-	if (GameServer()->m_pController->IsInfection())
-	{
-		// If a human dies for any reason, he/she is infected
-		if (!GetPlayer()->IsInfected())
-			GetPlayer()->StartInfection();
-	}
 }
 
 void CCharacter::DieSpikes(int pPlayerID, int spikes_flag) {
@@ -857,7 +850,6 @@ void CCharacter::DieSpikes(int pPlayerID, int spikes_flag) {
 
 		if (GameServer()->m_pController->IsInfection())
 		{
-			// If a human dies for any reason, he/she is infected
 			if (!GetPlayer()->IsInfected())
 				GetPlayer()->StartInfection();
 		}
