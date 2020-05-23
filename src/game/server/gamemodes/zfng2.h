@@ -21,7 +21,7 @@ public:
 	{
 		IGS_WAITING_FOR_PLAYERS,
 		IGS_WAITING_FOR_INFECTION,
-		IGS_WAITING_FOR_INFECTED_FLAG,
+		IGS_WAITING_FLAG,
 		IGS_NORMAL,
 		IGS_ROUND_ENDED
 	};
@@ -55,10 +55,17 @@ private:
 	);
 
 	vec2 m_aFlagStandPositions[2];
-	class CFlag* m_pInfectionFlag;
 	class CFlagStand* m_apFlagStands[2];
-	void SpawnInfectionFlag();
-	void RemoveInfectionFlag();
+	class CFlag* m_pFlag;
+	void SpawnFlag();
+	void RemoveFlag();
+	void DoFlag();
+	void ReturnFlag(CCharacter* pCharacter);
+	void TakeFlag(CCharacter* pCharacter);
+	int DropFlagMaybe(class CCharacter* pVictim, class CPlayer* pKiller);
+	bool HasFlagHitDeath();
+	void DoDroppedFlag();
+	void DoFlagCapture();
 	void SpawnFlagStand(int Team);
 };
 #endif

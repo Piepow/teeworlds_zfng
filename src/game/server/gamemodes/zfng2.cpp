@@ -1,5 +1,6 @@
 /* (c) KeksTW    */
 #include "zfng2.h"
+#include <game/mapitems.h>
 #include "../entities/character.h"
 #include "../entities/flag.h"
 #include "../entities/flag_stand.h"
@@ -19,6 +20,7 @@ CGameControllerZFNG2::CGameControllerZFNG2(class CGameContext *pGameServer) :
 	m_Broadcaster(pGameServer)
 {
 	m_pGameType = "zfng2";
+	m_GameFlags = GAMEFLAG_FLAGS;
 	SetGameState(IGS_WAITING_FOR_PLAYERS);
 }
 
@@ -30,6 +32,7 @@ CGameControllerZFNG2::CGameControllerZFNG2(
 	m_Broadcaster(pGameServer)
 {
 	m_pGameType = "zfng2";
+	m_GameFlags = GAMEFLAG_FLAGS;
 	SetGameState(IGS_WAITING_FOR_PLAYERS);
 }
 
@@ -61,12 +64,12 @@ void CGameControllerZFNG2::SetGameState(EGameState GameState)
 			m_GameStateTimer = Server()->TickSpeed() * 5;
 			IGameController::StartRound();
 			break;
-		case IGS_WAITING_FOR_INFECTED_FLAG:
+		case IGS_WAITING_FLAG:
 			m_GameState = GameState;
 			m_GameStateTimer = Server()->TickSpeed() * 2;
 			break;
 		case IGS_NORMAL:
-			SpawnInfectionFlag();
+			SpawnFlag();
 			m_GameState = GameState;
 			m_GameStateTimer = TIMER_INFINITE;
 			break;
@@ -108,9 +111,9 @@ void CGameControllerZFNG2::Tick()
 		switch (m_GameState)
 		{
 			case IGS_WAITING_FOR_INFECTION:
-				SetGameState(IGS_WAITING_FOR_INFECTED_FLAG);
+				SetGameState(IGS_WAITING_FLAG);
 				break;
-			case IGS_WAITING_FOR_INFECTED_FLAG:
+			case IGS_WAITING_FLAG:
 				SetGameState(IGS_NORMAL);
 				break;
 		}
@@ -144,12 +147,233 @@ void CGameControllerZFNG2::Tick()
 					m_Broadcaster.SetBroadcast(-1, aBuf, 10);
 					break;
 				}
+			case IGS_WAITING_FLAG:
+				{
+					// TODO: Broadcast time for flag to appear
+					break;
+				}
+			case IGS_NORMAL:
+				if (m_pFlag != NULL)
+					DoFlag();
+				break;
 		}
 	}
 
 	m_Broadcaster.Update();
 	DoInactivePlayers();
-	DoWincheck();
+
+	switch (m_GameState) {
+		case IGS_WAITING_FOR_INFECTION:
+		case IGS_WAITING_FLAG:
+		case IGS_NORMAL:
+			DoWincheck();
+			break;
+	}
+}
+
+bool CGameControllerZFNG2::HasFlagHitDeath()
+{
+	// Reset if flag hits death or leaves the game layer
+	int FlagCollision = GameServer()->Collision()->GetCollisionAt(
+		m_pFlag->m_Pos.x,
+		m_pFlag->m_Pos.y
+	);
+
+	int Collision =
+		FlagCollision &
+		(
+			CCollision::COLFLAG_DEATH |
+			CCollision::COLFLAG_SPIKE_NORMAL |
+			CCollision::COLFLAG_SPIKE_RED |
+			CCollision::COLFLAG_SPIKE_BLUE |
+			CCollision::COLFLAG_SPIKE_GOLD |
+			CCollision::COLFLAG_SPIKE_GREEN |
+			CCollision::COLFLAG_SPIKE_PURPLE
+		);
+
+	return Collision != 0 || m_pFlag->GameLayerClipped(m_pFlag->m_Pos);
+}
+
+void CGameControllerZFNG2::DoFlag()
+{
+	if (HasFlagHitDeath())
+	{
+		GameServer()->Console()->Print(
+			IConsole::OUTPUT_LEVEL_DEBUG, "game", "flag_return"
+		);
+		GameServer()->CreateSoundGlobal(SOUND_CTF_RETURN);
+		m_pFlag->Reset();
+		return;
+	}
+
+	CCharacter* pCarrier = m_pFlag->m_pCarryingCharacter;
+	if (pCarrier == NULL)
+	{
+		// Nobody is currently carrying the flag
+
+		CCharacter *apCloseCCharacters[MAX_CLIENTS];
+		int Num = GameServer()->m_World.FindEntities(
+			m_pFlag->m_Pos,
+			CFlag::ms_PhysSize,
+			(CEntity**)apCloseCCharacters,
+			MAX_CLIENTS,
+			CGameWorld::ENTTYPE_CHARACTER
+		);
+		for (int i = 0; i < Num; i++)
+		{
+			CCharacter* pCharacter = apCloseCCharacters[i];
+			if (!pCharacter->IsAlive() ||
+				pCharacter->GetPlayer()->GetTeam() == TEAM_SPECTATORS ||
+				GameServer()->Collision()->IntersectLine(
+					m_pFlag->m_Pos,
+					pCharacter->m_Pos,
+					NULL, NULL
+				)
+			) { continue; }
+
+			if (pCharacter->GetPlayer()->IsInfected()) {
+				if (!m_pFlag->m_AtStand)
+					ReturnFlag(pCharacter);
+			}
+			else {
+				TakeFlag(pCharacter);
+				break;
+			}
+		}
+
+		if (pCarrier == NULL && !m_pFlag->m_AtStand)
+			DoDroppedFlag();
+	} else {
+		// Somebody is currently carrying the flag
+
+		// Update flag position
+		m_pFlag->m_Pos = pCarrier->m_Pos;
+
+		float CaptureDistance = distance(
+			m_pFlag->m_Pos,
+			m_aFlagStandPositions[TEAM_HUMAN]
+		);
+		float MaxCaptureDistance = CFlag::ms_PhysSize + CCharacter::ms_PhysSize;
+		if (CaptureDistance < MaxCaptureDistance) {
+			// The flag was captured
+			DoFlagCapture();
+		}
+	}
+}
+
+void CGameControllerZFNG2::ReturnFlag(CCharacter* pCharacter)
+{
+	pCharacter->GetPlayer()->m_Score += 1;
+	int cid = pCharacter->GetPlayer()->GetCID();
+
+	char aBuf[256];
+	str_format(
+		aBuf, sizeof(aBuf),
+		"flag_return player='%d:%s'",
+		cid, Server()->ClientName(cid)
+	);
+	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
+	GameServer()->CreateSoundGlobal(SOUND_CTF_RETURN);
+	m_pFlag->Reset();
+}
+
+void CGameControllerZFNG2::TakeFlag(CCharacter* pCharacter)
+{
+	if (m_pFlag->m_AtStand)
+	{
+		m_aTeamscore[TEAM_HUMAN]++;
+		m_pFlag->m_GrabTick = Server()->Tick();
+	}
+
+	m_pFlag->m_AtStand = 0;
+	m_pFlag->m_pCarryingCharacter = pCharacter;
+	pCharacter->GetPlayer()->m_Score += 1;
+	int cid = pCharacter->GetPlayer()->GetCID();
+
+	char aBuf[256];
+	str_format(
+		aBuf, sizeof(aBuf),
+		"flag_grab player='%d:%s'",
+		cid,
+		Server()->ClientName(cid)
+	);
+	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
+
+	for (int c = 0; c < MAX_CLIENTS; c++)
+	{
+		CPlayer *pPlayer = GameServer()->m_apPlayers[c];
+		if (pPlayer == NULL)
+			continue;
+
+		if (pPlayer->GetTeam() == TEAM_SPECTATORS &&
+			pPlayer->m_SpectatorID != SPEC_FREEVIEW &&
+			GameServer()->m_apPlayers[pPlayer->m_SpectatorID] &&
+			GameServer()->m_apPlayers[pPlayer->m_SpectatorID]->GetTeam() == TEAM_INFECTED
+		)
+			GameServer()->CreateSoundGlobal(SOUND_CTF_GRAB_EN, c);
+		else if (pPlayer->GetTeam() == TEAM_INFECTED)
+			GameServer()->CreateSoundGlobal(SOUND_CTF_GRAB_EN, c);
+		else
+			GameServer()->CreateSoundGlobal(SOUND_CTF_GRAB_PL, c);
+	}
+}
+
+void CGameControllerZFNG2::DoDroppedFlag()
+{
+	CCharacter* pCarrier = m_pFlag->m_pCarryingCharacter;
+	if (pCarrier == NULL && !m_pFlag->m_AtStand)
+	{
+		if (TICK > m_pFlag->m_DropTick + TICK_SPEED * 30)
+		{
+			GameServer()->CreateSoundGlobal(SOUND_CTF_RETURN);
+			m_pFlag->Reset();
+		}
+		else
+		{
+			m_pFlag->m_Vel.y += GameServer()->m_World.m_Core.m_Tuning.m_Gravity;
+			GameServer()->Collision()->MoveBox(
+				&m_pFlag->m_Pos,
+				&m_pFlag->m_Vel,
+				vec2(m_pFlag->ms_PhysSize, m_pFlag->ms_PhysSize),
+				0.5f
+			);
+		}
+	}
+}
+
+void CGameControllerZFNG2::DoFlagCapture()
+{
+	CCharacter* pCarrier = m_pFlag->m_pCarryingCharacter;
+	int carrierCid = pCarrier->GetPlayer()->GetCID();
+	pCarrier->GetPlayer()->m_Score += 5;
+
+	char aBuf[512];
+	str_format(
+		aBuf, sizeof(aBuf),
+		"flag_capture player='%d:%s'",
+		carrierCid,
+		Server()->ClientName(carrierCid)
+	);
+	GameServer()->Console()->Print(
+		IConsole::OUTPUT_LEVEL_DEBUG,
+		"game",
+		aBuf
+	);
+
+	float CaptureTime =
+		(TICK - m_pFlag->m_GrabTick) / (float)(TICK_SPEED);
+
+	str_format(
+		aBuf, sizeof(aBuf),
+		"'%s' captured the flag (%d.%s%d seconds)",
+		Server()->ClientName(carrierCid),
+		(int)CaptureTime % 60,
+		((int)(CaptureTime * 100) % 100) < 10 ? "0" : "",
+		(int)(CaptureTime * 100) % 100
+	);
+	GameServer()->SendChat(-1, -2, aBuf);
+	GameServer()->CreateSoundGlobal(SOUND_CTF_CAPTURE);
+	RemoveFlag();
 }
 
 void CGameControllerZFNG2::DoInactivePlayers()
@@ -250,6 +474,30 @@ void CGameControllerZFNG2::DoWincheck()
 void CGameControllerZFNG2::Snap(int SnappingClient)
 {
 	IGameController::Snap(SnappingClient);
+
+	CNetObj_GameData *pGameDataObj =
+		(CNetObj_GameData *)Server()->SnapNewItem(
+			NETOBJTYPE_GAMEDATA, 0, sizeof(CNetObj_GameData)
+		);
+
+	if (pGameDataObj == NULL)
+		return;
+
+	if (m_pFlag == NULL) {
+		pGameDataObj->m_FlagCarrierBlue = FLAG_MISSING;
+	} else {
+		CCharacter* pCarrier = m_pFlag->m_pCarryingCharacter;
+
+		if (m_pFlag->m_AtStand) {
+			pGameDataObj->m_FlagCarrierBlue = FLAG_ATSTAND;
+		} else if (pCarrier && pCarrier->GetPlayer()) {
+			pGameDataObj->m_FlagCarrierBlue = pCarrier->GetPlayer()->GetCID();
+		} else {
+			pGameDataObj->m_FlagCarrierBlue = FLAG_TAKEN;
+		}
+	}
+
+	pGameDataObj->m_FlagCarrierRed = FLAG_MISSING;
 }
 
 bool CGameControllerZFNG2::OnEntity(int Index, vec2 Pos)
@@ -281,11 +529,14 @@ void CGameControllerZFNG2::OnCharacterSpawn(class CCharacter *pChr)
 	pChr->GiveWeapon(WEAPON_RIFLE, -1);
 }
 
-int CGameControllerZFNG2::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *pKiller, int Weapon)
-{
+int CGameControllerZFNG2::OnCharacterDeath(
+	class CCharacter *pVictim,
+	class CPlayer *pKiller,
+	int Weapon
+) {
 	// do scoreing
 	if(!pKiller || Weapon == WEAPON_GAME)
-		return 0;
+		return DropFlagMaybe(pVictim, pKiller);
 	if(pKiller == pVictim->GetPlayer())
 		pVictim->GetPlayer()->m_Stats.m_Selfkills++; // suicide
 	else
@@ -321,7 +572,46 @@ int CGameControllerZFNG2::OnCharacterDeath(class CCharacter *pVictim, class CPla
 		pVictim->GetPlayer()->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*.75f;
 	} else if (Weapon == WEAPON_WORLD)
 		pVictim->GetPlayer()->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*.75f;
-	return 0;
+	if (Weapon != WEAPON_RIFLE &&
+		Weapon != WEAPON_GRENADE &&
+		Weapon != WEAPON_HAMMER
+	) {
+		// Only drop the flag if the victim is killed, not frozen
+		return DropFlagMaybe(pVictim, pKiller);
+	} else {
+		return 0;
+	}
+}
+
+int CGameControllerZFNG2::DropFlagMaybe(
+	class CCharacter* pVictim,
+	class CPlayer* pKiller
+) {
+	int HadFlag = 0;
+	for (int i = 0; i < 2; i++)
+	{
+		if (m_pFlag &&
+			pKiller &&
+			pKiller->GetCharacter() &&
+			m_pFlag->m_pCarryingCharacter == pKiller->GetCharacter()
+		) { HadFlag |= 2; }
+
+		if (m_pFlag && m_pFlag->m_pCarryingCharacter == pVictim)
+		{
+			GameServer()->CreateSoundGlobal(SOUND_CTF_DROP);
+			m_pFlag->m_DropTick = Server()->Tick();
+			m_pFlag->m_pCarryingCharacter = 0;
+			m_pFlag->m_Vel = vec2(0,0);
+
+			if (pKiller &&
+				pKiller->GetTeam() != pVictim->GetPlayer()->GetTeam()
+			) { pKiller->m_Score++; }
+
+			HadFlag |= 1;
+		}
+	}
+
+	return HadFlag;
 }
 
 void CGameControllerZFNG2::PostReset() {
@@ -341,7 +631,7 @@ void CGameControllerZFNG2::PostReset() {
 void CGameControllerZFNG2::StartRound()
 {
 	IGameController::StartRound();
-	RemoveInfectionFlag();
+	RemoveFlag();
 	SetGameState(IGS_WAITING_FOR_PLAYERS);
 }
 
@@ -382,23 +672,23 @@ void CGameControllerZFNG2::CountPlayers(
 		NumMinimumInfected = 2;
 }
 
-void CGameControllerZFNG2::SpawnInfectionFlag()
+void CGameControllerZFNG2::SpawnFlag()
 {
 	if (m_aFlagStandPositions[TEAM_INFECTED] != NULL) {
-		m_pInfectionFlag = new CFlag(&GameServer()->m_World, TEAM_INFECTED);
+		m_pFlag = new CFlag(&GameServer()->m_World, TEAM_INFECTED);
 		vec2 StandPos = m_aFlagStandPositions[TEAM_INFECTED];
-		m_pInfectionFlag->m_StandPos = StandPos;
-		m_pInfectionFlag->m_Pos = StandPos;
-		GameServer()->m_World.InsertEntity(m_pInfectionFlag);
+		m_pFlag->m_StandPos = StandPos;
+		m_pFlag->m_Pos = StandPos;
+		GameServer()->m_World.InsertEntity(m_pFlag);
 	}
 }
 
-void CGameControllerZFNG2::RemoveInfectionFlag()
+void CGameControllerZFNG2::RemoveFlag()
 {
-	if (m_pInfectionFlag != NULL)
-		GameServer()->m_World.DestroyEntity(m_pInfectionFlag);
+	if (m_pFlag != NULL)
+		GameServer()->m_World.DestroyEntity(m_pFlag);
 
-	m_pInfectionFlag = NULL;
+	m_pFlag = NULL;
 }
 
 void CGameControllerZFNG2::SpawnFlagStand(int Team)
