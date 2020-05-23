@@ -25,7 +25,7 @@ public:
 
 	void TryRespawn();
 	void Respawn();
-	void SetTeam(int Team, bool DoChatMsg=true);
+	void SetTeam(int Team, bool DoChatMsg=true, bool Respawn=true);
 
 	//doesnt kill the character
 	void SetTeamSilent(int Team);

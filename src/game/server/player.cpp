@@ -309,27 +309,61 @@ void CPlayer::Respawn()
 		m_Spawning = true;
 }
 
-void CPlayer::SetTeam(int Team, bool DoChatMsg)
+void CPlayer::SetTeam(int Team, bool DoChatMsg, bool Respawn)
 {
 	// clamp the team
 	Team = GameServer()->m_pController->ClampTeam(Team);
 	if(m_Team == Team)
 		return;
 
+	if (GameServer()->m_pController->IsInfection() &&
+		Team == TEAM_INFECTED
+	) {
+		m_InfectionStartTick = Server()->Tick();
+	}
+
 	char aBuf[512];
 	if(DoChatMsg)
 	{
-		str_format(aBuf, sizeof(aBuf), "'%s' joined the %s", Server()->ClientName(m_ClientID), GameServer()->m_pController->GetTeamName(Team));
+		if (GameServer()->m_pController->IsInfection()) {
+			switch (Team) {
+				case TEAM_HUMAN:
+					str_format(
+						aBuf, sizeof(aBuf),
+						"'%s' was revived",
+						Server()->ClientName(m_ClientID)
+					);
+					break;
+				case TEAM_INFECTED:
+					str_format(
+						aBuf, sizeof(aBuf),
+						"'%s' was infected",
+						Server()->ClientName(m_ClientID)
+					);
+					break;
+			}
+		} else {
+			str_format(
+				aBuf, sizeof(aBuf),
+				"'%s' joined the %s",
+				Server()->ClientName(m_ClientID),
+				GameServer()->m_pController->GetTeamName(Team)
+			);
+		}
 		GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
 	}
 
-	KillCharacter(WEAPON_GAME, true);
+	if (Respawn)
+	{
+		KillCharacter(WEAPON_GAME, true);
+		// we got to wait 0.5 secs before respawning
+		m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
+	}
 
 	m_Team = Team;
 	m_LastActionTick = Server()->Tick();
 	m_SpectatorID = SPEC_FREEVIEW;
-	// we got to wait 0.5 secs before respawning
-	m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
+
 	str_format(aBuf, sizeof(aBuf), "team_join player='%d:%s' m_Team=%d", m_ClientID, Server()->ClientName(m_ClientID), m_Team);
 	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 
@@ -523,11 +557,11 @@ void CPlayer::FakeSnap(int PlayerID) {
 
 bool CPlayer::IsInfected()
 {
-	return GetTeam() == TEAM_BLUE;
+	return GetTeam() == TEAM_INFECTED;
 }
 
+// Alias for `SetTeam`
 void CPlayer::StartInfection()
 {
-	m_InfectionStartTick = Server()->Tick();
-	SetTeam(TEAM_BLUE);
+	SetTeam(TEAM_INFECTED, true, false);
 }
