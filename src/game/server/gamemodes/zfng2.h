@@ -3,6 +3,7 @@
 #define GAME_SERVER_GAMEMODES_ZFNG2_H
 
 #include <game/server/gamecontroller.h>
+#include <game/server/broadcaster.h>
 #include <base/vmath.h>
 
 class CGameControllerZFNG2 : public IGameController
@@ -15,15 +16,40 @@ public:
 	virtual bool UseFakeTeams();
 	virtual bool IsInfection() const;
 
+	// Internal game state
+	enum EGameState
+	{
+		IGS_WAITING_FOR_PLAYERS,
+		IGS_WAITING_FOR_INFECTION,
+		IGS_WAITING_FOR_INFECTED_FLAG,
+		IGS_NORMAL,
+		IGS_ROUND_ENDED
+	};
+	EGameState m_GameState;
+	int m_GameStateTimer;
+
+	void SetGameState(EGameState GameState);
+	enum { TIMER_INFINITE = -1 };
+
 	virtual void Tick();
 	virtual void Snap(int SnappingClient);
 	virtual void OnCharacterSpawn(class CCharacter *pChr);
 	virtual int OnCharacterDeath(class CCharacter *pVictim, class CPlayer *pKiller, int Weapon);
 
+	void DoInactivePlayers();
 	virtual void DoWincheck();
 
 	virtual void PostReset();
 protected:
-	void EndRound();
+	virtual void StartRound();
+	virtual void EndRound();
+private:
+	CBroadcaster m_Broadcaster;
+
+	void CountPlayers(
+		int& NumHumans,
+		int& NumInfected,
+		int& NumMinimumInfected
+	);
 };
 #endif

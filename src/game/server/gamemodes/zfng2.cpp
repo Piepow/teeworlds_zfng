@@ -7,78 +7,148 @@
 #include <string.h>
 #include <stdio.h>
 
-CGameControllerZFNG2::CGameControllerZFNG2(class CGameContext *pGameServer)
-: IGameController((class CGameContext*)pGameServer)
+#define TICK_SPEED Server()->TickSpeed()
+#define TICK Server()->Tick()
+
+static const int gs_minPlayers = 4;
+
+CGameControllerZFNG2::CGameControllerZFNG2(class CGameContext *pGameServer) :
+	IGameController((class CGameContext*)pGameServer),
+	m_Broadcaster(pGameServer)
 {
 	m_pGameType = "zfng2";
-
-	if(m_Config.m_SvTournamentMode) m_Warmup = 60*Server()->TickSpeed();
-	else m_Warmup = m_Config.m_SvWarmup;
+	SetGameState(IGS_WAITING_FOR_PLAYERS);
 }
 
-CGameControllerZFNG2::CGameControllerZFNG2(class CGameContext *pGameServer, CConfiguration& pConfig)
-: IGameController((class CGameContext*)pGameServer, pConfig)
+CGameControllerZFNG2::CGameControllerZFNG2(
+	class CGameContext *pGameServer,
+	CConfiguration& pConfig
+) :
+	IGameController((class CGameContext*)pGameServer, pConfig),
+	m_Broadcaster(pGameServer)
 {
 	m_pGameType = "zfng2";
-
-	if(m_Config.m_SvTournamentMode) m_Warmup = 60*Server()->TickSpeed();
-	else m_Warmup = m_Config.m_SvWarmup;
+	SetGameState(IGS_WAITING_FOR_PLAYERS);
 }
 
-bool CGameControllerZFNG2::IsTeamplay() const {
+bool CGameControllerZFNG2::IsTeamplay() const
+{
 	return true;
 }
 
-bool CGameControllerZFNG2::UseFakeTeams(){
+bool CGameControllerZFNG2::UseFakeTeams()
+{
 	return true;
 }
 
-bool CGameControllerZFNG2::IsInfection() const {
+bool CGameControllerZFNG2::IsInfection() const
+{
 	return true;
+}
+
+void CGameControllerZFNG2::SetGameState(EGameState GameState)
+{
+	switch (GameState)
+	{
+		case IGS_WAITING_FOR_PLAYERS:
+			m_GameState = GameState;
+			m_GameStateTimer = TIMER_INFINITE;
+			break;
+		case IGS_WAITING_FOR_INFECTION:
+			m_GameState = GameState;
+			m_GameStateTimer = Server()->TickSpeed() * 10;
+			IGameController::StartRound();
+			break;
+		case IGS_WAITING_FOR_INFECTED_FLAG:
+			m_GameState = GameState;
+			m_GameStateTimer = Server()->TickSpeed() * 60 * 2;
+			break;
+	}
 }
 
 void CGameControllerZFNG2::Tick()
 {
-	// do warmup
-	if(!GameServer()->m_World.m_Paused && m_Warmup)
-	{
-		if(m_Config.m_SvTournamentMode){
+	if (m_GameOverTick != -1) {
+		if (Server()->Tick() > m_GameOverTick + Server()->TickSpeed() * 10) {
+			CycleMap();
+			StartRound();
+			m_RoundCount++;
 		} else {
-			m_Warmup--;
-			if(!m_Warmup)
-				StartRound();
+			return;
 		}
 	}
 
-	if(m_GameOverTick != -1)
+	if (GameServer()->m_World.m_Paused && m_UnpauseTimer)
 	{
-		// game over.. wait for restart
-		if(Server()->Tick() > m_GameOverTick+Server()->TickSpeed()*10)
-		{
-			if(m_Config.m_SvTournamentMode){
-			} else {
-				CycleMap();
-				StartRound();
-				m_RoundCount++;
-			}
-		}
-	}
-	else if(GameServer()->m_World.m_Paused && m_UnpauseTimer)
-	{
+		++m_RoundStartTick;
 		--m_UnpauseTimer;
-		if(!m_UnpauseTimer)
+		if (!m_UnpauseTimer)
 			GameServer()->m_World.m_Paused = false;
+		return;
 	}
 
+	if (m_GameStateTimer > 0)
+		--m_GameStateTimer;
 
-	// game is Paused
-	if(GameServer()->m_World.m_Paused) {
-		if (m_GameOverTick == -1) {
+	// `NumMinimumInfected` is the least number of tees that must be infected,
+	// which depends on the player count.
+	int NumHumans, NumInfected, NumMinimumInfected;
+	CountPlayers(NumHumans, NumInfected, NumMinimumInfected);
+
+	if (m_GameStateTimer == 0)
+	{
+		// Timer just fired
+		switch (m_GameState)
+		{
+			case IGS_WAITING_FOR_INFECTION:
+				SetGameState(IGS_WAITING_FOR_INFECTED_FLAG);
+				break;
+			case IGS_WAITING_FOR_INFECTED_FLAG:
+				// TODO: Spawn flag
+				SetGameState(IGS_NORMAL);
+				break;
 		}
-		if(GameServer()->m_World.m_Paused) ++m_RoundStartTick;
+	} else {
+		// Timer is still running
+		switch (m_GameState)
+		{
+			case IGS_WAITING_FOR_PLAYERS:
+				{
+					if (NumHumans + NumInfected >= 2) {
+						SetGameState(IGS_WAITING_FOR_INFECTION);
+					} else {
+						// Do broadcasts
+						char aBuf[64];
+						str_format(
+							aBuf, sizeof aBuf,
+							"Waiting for players"
+						);
+						m_Broadcaster.SetBroadcast(-1, aBuf, -1);
+					}
+					break;
+				}
+			case IGS_WAITING_FOR_INFECTION:
+				{
+					char aBuf[64];
+					str_format(
+						aBuf, sizeof aBuf,
+						"Starting infection in %d seconds",
+						10 - ((TICK - m_RoundStartTick) / TICK_SPEED)
+					);
+					m_Broadcaster.SetBroadcast(-1, aBuf, 10);
+					break;
+				}
+		}
 	}
 
-	// check for inactive players
+	m_Broadcaster.Update();
+	DoInactivePlayers();
+	DoWincheck();
+}
+
+void CGameControllerZFNG2::DoInactivePlayers()
+{
+
 	if(m_Config.m_SvInactiveKickTime > 0 && !m_Config.m_SvTournamentMode)
 	{
 		for(int i = 0; i < MAX_CLIENTS; ++i)
@@ -118,8 +188,6 @@ void CGameControllerZFNG2::Tick()
 			}
 		}
 	}
-
-	DoWincheck();
 }
 
 void CGameControllerZFNG2::DoWincheck()
@@ -231,7 +299,7 @@ int CGameControllerZFNG2::OnCharacterDeath(class CCharacter *pVictim, class CPla
 	return 0;
 }
 
-void CGameControllerZFNG2::PostReset(){
+void CGameControllerZFNG2::PostReset() {
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
 		if(GameServer()->m_apPlayers[i])
@@ -245,8 +313,45 @@ void CGameControllerZFNG2::PostReset(){
 	}
 }
 
+void CGameControllerZFNG2::StartRound()
+{
+	IGameController::StartRound();
+	SetGameState(IGS_WAITING_FOR_PLAYERS);
+}
+
 void CGameControllerZFNG2::EndRound()
 {
 	IGameController::EndRound();
 	GameServer()->SendRoundStats();
+}
+
+void CGameControllerZFNG2::CountPlayers(
+	int& NumHumans,
+	int& NumInfected,
+	int& NumMinimumInfected
+) {
+	// Set them to zero
+	NumHumans = 0;
+	NumInfected = 0;
+
+	// Loop through and increment them
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		// Check that the player is able to play (not spectating)
+		if (GameServer()->IsClientPlayer(i)) {
+			if (GameServer()->m_apPlayers[i]->IsInfected())
+				NumInfected++;
+			else
+				NumHumans++;
+		}
+	}
+
+	// Figure out how many tees to infect at the start of a round, which
+	// depends on number of players
+	if (NumHumans + NumInfected <= 1)
+		NumMinimumInfected = 0;
+	else if (NumHumans + NumInfected <= 3)
+		NumMinimumInfected = 1;
+	else
+		NumMinimumInfected = 2;
 }
