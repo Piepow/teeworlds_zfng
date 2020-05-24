@@ -17,6 +17,7 @@ private:
 	int m_ExplosionTimer;
 	int m_NumExplosions; // Cache for performance
 	void CalcNumExplosions();
+	void DoEmotes();
 	void DoDeaths();
 };
 

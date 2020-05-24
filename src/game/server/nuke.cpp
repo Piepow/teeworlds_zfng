@@ -11,6 +11,27 @@ CNuke::CNuke(class CGameContext* pGameServer, vec2 Center) :
 {
 	m_Radius = 0.0f;
 	CalcNumExplosions();
+	DoEmotes();
+}
+
+void CNuke::DoEmotes()
+{
+	CCharacter *p = (CCharacter*)m_pGameServer->m_World
+		.FindFirst(CGameWorld::ENTTYPE_CHARACTER);
+
+	for (; p; p = (CCharacter *)p->TypeNext()) {
+		if (p->GetPlayer()->IsInfected()) {
+			m_pGameServer->SendEmoticon(
+				p->GetPlayer()->GetCID(),
+				EMOTICON_GHOST
+			);
+		} else {
+			m_pGameServer->SendEmoticon(
+				p->GetPlayer()->GetCID(),
+				EMOTICON_EYES
+			);
+		}
+	}
 }
 
 bool CNuke::Update()
