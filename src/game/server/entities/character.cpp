@@ -910,12 +910,11 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Free
 		this->Freeze(g_Config.m_SvHitFreeze);
 		m_EmoteType = EMOTE_PAIN;
 		m_EmoteStop = Server()->Tick() + 500 * Server()->TickSpeed() / 1000;
+		Hit(From, Weapon);
 	} else {
 		// Don't bother taking damage
 		Die(From, Weapon);
 	}
-
-	Hit(From, Weapon);
 
 	//set attacker's face to happy (taunt!)
 	if (From >= 0 && From != m_pPlayer->GetCID() && GameServer()->m_apPlayers[From])
