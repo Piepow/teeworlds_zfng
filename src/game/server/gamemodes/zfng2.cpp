@@ -61,11 +61,11 @@ void CGameControllerZFNG2::SetGameState(EGameState GameState)
 			m_GameStateTimer = TIMER_INFINITE;
 			break;
 		case IGS_WAITING_FOR_INFECTION:
-			m_GameStateTimer = Server()->TickSpeed() * 0.5;
+			m_GameStateTimer = TICK_SPEED * 0.5;
 			IGameController::StartRound();
 			break;
 		case IGS_WAITING_FLAG:
-			m_GameStateTimer = Server()->TickSpeed() * 0.5;
+			m_GameStateTimer = TICK_SPEED * 0.5;
 			break;
 		case IGS_NORMAL:
 			SpawnFlag();
@@ -79,10 +79,15 @@ void CGameControllerZFNG2::SetGameState(EGameState GameState)
 			m_GameStateTimer = TIMER_INFINITE;
 			// TODO: Prevent players from spawning
 			break;
+		case IGS_FINISHING_OFF_ZOMBIES:
+			FinishOffZombies();
+			m_GameStateTimer = TICK_SPEED * 2;
+			break;
 		case IGS_ROUND_ENDED:
 			// We don't do anything here, because we rely on `m_GameOverTick`
 			// from `IGameController`
 			m_GameStateTimer = TIMER_INFINITE;
+			EndRound();
 			break;
 	}
 }
@@ -90,7 +95,7 @@ void CGameControllerZFNG2::SetGameState(EGameState GameState)
 void CGameControllerZFNG2::Tick()
 {
 	if (m_GameOverTick != -1) {
-		if (Server()->Tick() > m_GameOverTick + Server()->TickSpeed() * 10) {
+		if (Server()->Tick() > m_GameOverTick + TICK_SPEED * 10) {
 			CycleMap();
 			StartRound();
 			m_RoundCount++;
@@ -126,6 +131,9 @@ void CGameControllerZFNG2::Tick()
 				break;
 			case IGS_WAITING_FLAG:
 				SetGameState(IGS_NORMAL);
+				break;
+			case IGS_FINISHING_OFF_ZOMBIES:
+				SetGameState(IGS_ROUND_ENDED);
 				break;
 		}
 	} else {
@@ -171,7 +179,7 @@ void CGameControllerZFNG2::Tick()
 				if (m_Nuke->Update()) {
 					delete m_Nuke;
 					m_Nuke = NULL;
-					EndRound();
+					SetGameState(IGS_FINISHING_OFF_ZOMBIES);
 				}
 				break;
 		}
@@ -654,12 +662,6 @@ void CGameControllerZFNG2::StartRound()
 	SetGameState(IGS_WAITING_FOR_PLAYERS);
 }
 
-void CGameControllerZFNG2::EndRound()
-{
-	IGameController::EndRound();
-	SetGameState(IGS_ROUND_ENDED);
-}
-
 void CGameControllerZFNG2::CountPlayers(
 	int& NumHumans,
 	int& NumInfected,
@@ -716,4 +718,18 @@ void CGameControllerZFNG2::SpawnFlagStand(int Team)
 	m_apFlagStands[Team] = new CFlagStand(&GameServer()->m_World);
 	m_apFlagStands[Team]->m_Pos = StandPos;
 	GameServer()->m_World.InsertEntity(m_apFlagStands[Team]);
+}
+
+void CGameControllerZFNG2::FinishOffZombies()
+{
+	CCharacter *p = (CCharacter*)GameServer()->m_World
+		.FindFirst(CGameWorld::ENTTYPE_CHARACTER);
+
+	for (; p; p = (CCharacter *)p->TypeNext()) {
+		if (!p->GetPlayer()->IsInfected()) continue;
+
+		GameServer()->CreateExplosion(p->m_Pos, -1, WEAPON_GAME, true);
+		GameServer()->CreateSound(p->m_Pos, SOUND_GRENADE_EXPLODE);
+		p->Die(p->GetPlayer()->GetCID(), WEAPON_GAME);
+	}
 }

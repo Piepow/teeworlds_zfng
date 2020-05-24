@@ -25,6 +25,7 @@ public:
 		IGS_WAITING_FLAG,
 		IGS_NORMAL,
 		IGS_NUKE_DETONATED,
+		IGS_FINISHING_OFF_ZOMBIES,
 		IGS_ROUND_ENDED
 	};
 	EGameState m_GameState;
@@ -46,7 +47,6 @@ public:
 
 protected:
 	virtual void StartRound();
-	virtual void EndRound();
 private:
 	CBroadcaster m_Broadcaster;
 
@@ -69,6 +69,7 @@ private:
 	void DoDroppedFlag();
 	void DoFlagCapture();
 	void SpawnFlagStand(int Team);
+	void FinishOffZombies();
 
 	CNuke* m_Nuke;
 };
