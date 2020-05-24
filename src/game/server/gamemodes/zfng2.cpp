@@ -13,7 +13,7 @@
 #define TICK_SPEED Server()->TickSpeed()
 #define TICK Server()->Tick()
 
-static const int gs_minPlayers = 4;
+static const int gs_MinPlayers = 3;
 
 CGameControllerZFNG2::CGameControllerZFNG2(class CGameContext *pGameServer) :
 	IGameController((class CGameContext*)pGameServer),
@@ -61,11 +61,11 @@ void CGameControllerZFNG2::SetGameState(EGameState GameState)
 			m_GameStateTimer = TIMER_INFINITE;
 			break;
 		case IGS_WAITING_FOR_INFECTION:
-			m_GameStateTimer = TICK_SPEED * 0.5;
+			m_GameStateTimer = TICK_SPEED * 2;
 			IGameController::StartRound();
 			break;
 		case IGS_WAITING_FLAG:
-			m_GameStateTimer = TICK_SPEED * 0.5;
+			m_GameStateTimer = TICK_SPEED * 2;
 			break;
 		case IGS_NORMAL:
 			SpawnFlag();
@@ -141,7 +141,7 @@ void CGameControllerZFNG2::Tick()
 		{
 			case IGS_WAITING_FOR_PLAYERS:
 				{
-					if (NumHumans + NumInfected >= 2) {
+					if (NumHumans + NumInfected >= gs_MinPlayers) {
 						SetGameState(IGS_WAITING_FOR_INFECTION);
 					} else {
 						// Do broadcasts
@@ -667,6 +667,39 @@ void CGameControllerZFNG2::EndRound()
 	SetGameState(IGS_ROUND_ENDED);
 }
 
+bool CGameControllerZFNG2::IsInfectionStarted()
+{
+	switch (m_GameState) {
+		case IGS_WAITING_FOR_PLAYERS:
+		case IGS_WAITING_FOR_INFECTION:
+			return false;
+		default:
+			return true;
+	}
+}
+
+int CGameControllerZFNG2::GetAutoTeam(int NotThisID)
+{
+	if (IsInfectionStarted()) {
+		return TEAM_INFECTED;
+	} else {
+		return TEAM_HUMAN;
+	}
+}
+
+bool CGameControllerZFNG2::CanChangeTeam(CPlayer *pPlayer, int JoinTeam)
+{
+	if (IsInfectionStarted()) {
+		if (JoinTeam == TEAM_INFECTED || JoinTeam == TEAM_SPECTATORS) {
+			return true;
+		} else {
+			return false;
+		}
+	} else {
+		return true;
+	}
+}
+
 void CGameControllerZFNG2::CountPlayers(
 	int& NumHumans,
 	int& NumInfected,
@@ -727,14 +760,22 @@ void CGameControllerZFNG2::SpawnFlagStand(int Team)
 
 void CGameControllerZFNG2::FinishOffZombies()
 {
-	CCharacter *p = (CCharacter*)GameServer()->m_World
+	CCharacter* p = (CCharacter*)GameServer()->m_World
 		.FindFirst(CGameWorld::ENTTYPE_CHARACTER);
 
-	for (; p; p = (CCharacter *)p->TypeNext()) {
-		if (!p->GetPlayer()->IsInfected()) continue;
+	CCharacter* pNext;
 
-		GameServer()->CreateExplosion(p->m_Pos, -1, WEAPON_GAME, true);
-		GameServer()->CreateSound(p->m_Pos, SOUND_GRENADE_EXPLODE);
-		p->Die(p->GetPlayer()->GetCID(), WEAPON_GAME);
+	while (p != NULL) {
+		// We have to do this before `Die` because `Die` will remove it from
+		// the linked list
+		pNext = (CCharacter *)p->TypeNext();
+
+		if (p->GetPlayer()->IsInfected()) {
+			GameServer()->CreateExplosion(p->m_Pos, -1, WEAPON_GAME, true);
+			GameServer()->CreateSound(p->m_Pos, SOUND_GRENADE_EXPLODE);
+			p->Die(p->GetPlayer()->GetCID(), WEAPON_GAME);
+		}
+
+		p = pNext;
 	}
 }

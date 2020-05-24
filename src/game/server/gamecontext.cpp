@@ -988,15 +988,25 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				return;
 			}
 
+			int Team = pMsg->m_Team;
+
+			// Players can't join the human team during infection
+			if (m_pController->IsInfection() &&
+				m_pController->IsInfectionStarted() &&
+				Team == TEAM_HUMAN
+			) {
+				Team = TEAM_INFECTED;
+			}
+
 			// Switch team on given client and kill/respawn him
-			if(m_pController->CanJoinTeam(pMsg->m_Team, ClientID))
+			if(m_pController->CanJoinTeam(Team, ClientID))
 			{
-				if(m_pController->CanChangeTeam(pPlayer, pMsg->m_Team))
+				if(m_pController->CanChangeTeam(pPlayer, Team))
 				{
 					pPlayer->m_LastSetTeam = Server()->Tick();
-					if(pPlayer->GetTeam() == TEAM_SPECTATORS || pMsg->m_Team == TEAM_SPECTATORS)
+					if(pPlayer->GetTeam() == TEAM_SPECTATORS || Team == TEAM_SPECTATORS)
 						m_VoteUpdate = true;
-					pPlayer->SetTeam(pMsg->m_Team);
+					pPlayer->SetTeam(Team);
 					(void)m_pController->CheckTeamBalance();
 					pPlayer->m_TeamChangeTick = Server()->Tick();
 				}

@@ -83,11 +83,21 @@ void CNuke::DoDeaths()
 	CCharacter *p = (CCharacter*)m_pGameServer->m_World
 		.FindFirst(CGameWorld::ENTTYPE_CHARACTER);
 
-	for (; p; p = (CCharacter *)p->TypeNext()) {
-		if (!p->GetPlayer()->IsInfected()) continue;
-		float Dist = distance(p->m_Pos, m_Center);
-		if (Dist <= m_Radius) {
-			p->Die(p->GetPlayer()->GetCID(), WEAPON_GAME);
+	CCharacter* pNext;
+
+	while (p != NULL) {
+		// We have to do this before `Die` because `Die` will remove it from
+		// the linked list
+		pNext = (CCharacter *)p->TypeNext();
+
+		if (p->GetPlayer()->IsInfected()) {
+			float Dist = distance(p->m_Pos, m_Center);
+
+			if (Dist <= m_Radius) {
+				p->Die(p->GetPlayer()->GetCID(), WEAPON_GAME);
+			}
 		}
+
+		p = pNext;
 	}
 }

@@ -48,6 +48,10 @@ public:
 protected:
 	virtual void StartRound();
 	virtual void EndRound();
+
+	virtual bool IsInfectionStarted();
+	virtual int GetAutoTeam(int NotThisID);
+	virtual bool CanChangeTeam(CPlayer *pPplayer, int JoinTeam);
 private:
 	CBroadcaster m_Broadcaster;
 
