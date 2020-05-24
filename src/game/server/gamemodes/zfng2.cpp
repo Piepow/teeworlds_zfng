@@ -87,7 +87,6 @@ void CGameControllerZFNG2::SetGameState(EGameState GameState)
 			// We don't do anything here, because we rely on `m_GameOverTick`
 			// from `IGameController`
 			m_GameStateTimer = TIMER_INFINITE;
-			EndRound();
 			break;
 	}
 }
@@ -133,7 +132,7 @@ void CGameControllerZFNG2::Tick()
 				SetGameState(IGS_NORMAL);
 				break;
 			case IGS_FINISHING_OFF_ZOMBIES:
-				SetGameState(IGS_ROUND_ENDED);
+				EndRound();
 				break;
 		}
 	} else {
@@ -660,6 +659,12 @@ void CGameControllerZFNG2::StartRound()
 	IGameController::StartRound();
 	RemoveFlag();
 	SetGameState(IGS_WAITING_FOR_PLAYERS);
+}
+
+void CGameControllerZFNG2::EndRound()
+{
+	IGameController::EndRound();
+	SetGameState(IGS_ROUND_ENDED);
 }
 
 void CGameControllerZFNG2::CountPlayers(

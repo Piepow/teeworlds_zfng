@@ -47,6 +47,7 @@ public:
 
 protected:
 	virtual void StartRound();
+	virtual void EndRound();
 private:
 	CBroadcaster m_Broadcaster;
 
