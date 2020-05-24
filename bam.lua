@@ -280,7 +280,7 @@ function build(settings)
 		engine, client, game_editor, zlib, pnglite, wavpack,
 		client_link_other, client_osxlaunch, md5)
 
-	server_exe = Link(server_settings, "fng2_srv", engine, server,
+	server_exe = Link(server_settings, "zfng_srv", engine, server,
 		game_shared, game_server, zlib, server_link_other, mysql_tool, md5)
 
 	serverlaunch = {}

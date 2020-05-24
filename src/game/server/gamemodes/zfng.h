@@ -1,17 +1,17 @@
 /* (c) KeksTW. */
-#ifndef GAME_SERVER_GAMEMODES_ZFNG2_H
-#define GAME_SERVER_GAMEMODES_ZFNG2_H
+#ifndef GAME_SERVER_GAMEMODES_ZFNG_H
+#define GAME_SERVER_GAMEMODES_ZFNG_H
 
 #include <game/server/gamecontroller.h>
 #include <game/server/broadcaster.h>
 #include <game/server/nuke.h>
 #include <base/vmath.h>
 
-class CGameControllerZFNG2 : public IGameController
+class CGameControllerZFNG : public IGameController
 {
 public:
-	CGameControllerZFNG2(class CGameContext* pGameServer);
-	CGameControllerZFNG2(class CGameContext* pGameServer, CConfiguration& pConfig);
+	CGameControllerZFNG(class CGameContext* pGameServer);
+	CGameControllerZFNG(class CGameContext* pGameServer, CConfiguration& pConfig);
 
 	virtual bool IsTeamplay() const;
 	virtual bool UseFakeTeams();

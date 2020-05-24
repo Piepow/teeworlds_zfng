@@ -15,7 +15,7 @@ fake_server*
 map_resave*
 map_version*
 packetgen*
-fng2_srv*
+zfng_srv*
 tileset_border*
 .vs
 Debug

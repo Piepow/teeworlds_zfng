@@ -1,5 +1,5 @@
 /* (c) KeksTW    */
-#include "zfng2.h"
+#include "zfng.h"
 #include <game/mapitems.h>
 #include "../entities/character.h"
 #include "../entities/flag.h"
@@ -15,43 +15,43 @@
 
 static const int gs_MinPlayers = 2;
 
-CGameControllerZFNG2::CGameControllerZFNG2(class CGameContext *pGameServer) :
+CGameControllerZFNG::CGameControllerZFNG(class CGameContext *pGameServer) :
 	IGameController((class CGameContext*)pGameServer),
 	m_Broadcaster(pGameServer)
 {
-	m_pGameType = "zfng2";
+	m_pGameType = "zfng";
 	m_GameFlags = GAMEFLAG_FLAGS;
 	SetGameState(IGS_WAITING_FOR_PLAYERS);
 }
 
-CGameControllerZFNG2::CGameControllerZFNG2(
+CGameControllerZFNG::CGameControllerZFNG(
 	class CGameContext *pGameServer,
 	CConfiguration& pConfig
 ) :
 	IGameController((class CGameContext*)pGameServer, pConfig),
 	m_Broadcaster(pGameServer)
 {
-	m_pGameType = "zfng2";
+	m_pGameType = "zfng";
 	m_GameFlags = GAMEFLAG_FLAGS;
 	SetGameState(IGS_WAITING_FOR_PLAYERS);
 }
 
-bool CGameControllerZFNG2::IsTeamplay() const
+bool CGameControllerZFNG::IsTeamplay() const
 {
 	return true;
 }
 
-bool CGameControllerZFNG2::UseFakeTeams()
+bool CGameControllerZFNG::UseFakeTeams()
 {
 	return true;
 }
 
-bool CGameControllerZFNG2::IsInfection() const
+bool CGameControllerZFNG::IsInfection() const
 {
 	return true;
 }
 
-void CGameControllerZFNG2::SetGameState(EGameState GameState)
+void CGameControllerZFNG::SetGameState(EGameState GameState)
 {
 	m_GameState = GameState;
 
@@ -91,7 +91,7 @@ void CGameControllerZFNG2::SetGameState(EGameState GameState)
 	}
 }
 
-void CGameControllerZFNG2::Tick()
+void CGameControllerZFNG::Tick()
 {
 	if (m_GameOverTick != -1) {
 		if (Server()->Tick() > m_GameOverTick + TICK_SPEED * 10) {
@@ -196,7 +196,7 @@ void CGameControllerZFNG2::Tick()
 	}
 }
 
-bool CGameControllerZFNG2::HasFlagHitDeath()
+bool CGameControllerZFNG::HasFlagHitDeath()
 {
 	// Reset if flag hits death or leaves the game layer
 	int FlagCollision = GameServer()->Collision()->GetCollisionAt(
@@ -219,7 +219,7 @@ bool CGameControllerZFNG2::HasFlagHitDeath()
 	return Collision != 0 || m_pFlag->GameLayerClipped(m_pFlag->m_Pos);
 }
 
-void CGameControllerZFNG2::DoFlag()
+void CGameControllerZFNG::DoFlag()
 {
 	if (HasFlagHitDeath())
 	{
@@ -286,7 +286,7 @@ void CGameControllerZFNG2::DoFlag()
 	}
 }
 
-void CGameControllerZFNG2::ReturnFlag(CCharacter* pCharacter)
+void CGameControllerZFNG::ReturnFlag(CCharacter* pCharacter)
 {
 	pCharacter->GetPlayer()->m_Score += 1;
 	int cid = pCharacter->GetPlayer()->GetCID();
@@ -302,7 +302,7 @@ void CGameControllerZFNG2::ReturnFlag(CCharacter* pCharacter)
 	m_pFlag->Reset();
 }
 
-void CGameControllerZFNG2::TakeFlag(CCharacter* pCharacter)
+void CGameControllerZFNG::TakeFlag(CCharacter* pCharacter)
 {
 	if (m_pFlag->m_AtStand)
 	{
@@ -343,7 +343,7 @@ void CGameControllerZFNG2::TakeFlag(CCharacter* pCharacter)
 	}
 }
 
-void CGameControllerZFNG2::DoDroppedFlag()
+void CGameControllerZFNG::DoDroppedFlag()
 {
 	CCharacter* pCarrier = m_pFlag->m_pCarryingCharacter;
 	if (pCarrier == NULL && !m_pFlag->m_AtStand)
@@ -366,7 +366,7 @@ void CGameControllerZFNG2::DoDroppedFlag()
 	}
 }
 
-void CGameControllerZFNG2::DoFlagCapture()
+void CGameControllerZFNG::DoFlagCapture()
 {
 	CCharacter* pCarrier = m_pFlag->m_pCarryingCharacter;
 	int carrierCid = pCarrier->GetPlayer()->GetCID();
@@ -402,7 +402,7 @@ void CGameControllerZFNG2::DoFlagCapture()
 	SetGameState(IGS_NUKE_DETONATED);
 }
 
-void CGameControllerZFNG2::DoInactivePlayers()
+void CGameControllerZFNG::DoInactivePlayers()
 {
 
 	if(m_Config.m_SvInactiveKickTime > 0 && !m_Config.m_SvTournamentMode)
@@ -446,7 +446,7 @@ void CGameControllerZFNG2::DoInactivePlayers()
 	}
 }
 
-void CGameControllerZFNG2::DoWincheck()
+void CGameControllerZFNG::DoWincheck()
 {
 	if(m_GameOverTick == -1 && !m_Warmup && !GameServer()->m_World.m_ResetRequested)
 	{
@@ -497,7 +497,7 @@ void CGameControllerZFNG2::DoWincheck()
 	}
 }
 
-void CGameControllerZFNG2::Snap(int SnappingClient)
+void CGameControllerZFNG::Snap(int SnappingClient)
 {
 	IGameController::Snap(SnappingClient);
 
@@ -526,7 +526,7 @@ void CGameControllerZFNG2::Snap(int SnappingClient)
 	pGameDataObj->m_FlagCarrierRed = FLAG_MISSING;
 }
 
-bool CGameControllerZFNG2::OnEntity(int Index, vec2 Pos)
+bool CGameControllerZFNG::OnEntity(int Index, vec2 Pos)
 {
 	if (IGameController::OnEntity(Index, Pos))
 		return true;
@@ -545,7 +545,7 @@ bool CGameControllerZFNG2::OnEntity(int Index, vec2 Pos)
 	return false;
 }
 
-void CGameControllerZFNG2::OnCharacterSpawn(class CCharacter *pChr)
+void CGameControllerZFNG::OnCharacterSpawn(class CCharacter *pChr)
 {
 	// default health
 	pChr->IncreaseHealth(10);
@@ -555,7 +555,7 @@ void CGameControllerZFNG2::OnCharacterSpawn(class CCharacter *pChr)
 	pChr->GiveWeapon(WEAPON_RIFLE, -1);
 }
 
-int CGameControllerZFNG2::OnCharacterDeath(
+int CGameControllerZFNG::OnCharacterDeath(
 	class CCharacter *pVictim,
 	class CPlayer *pKiller,
 	int Weapon
@@ -609,7 +609,7 @@ int CGameControllerZFNG2::OnCharacterDeath(
 	}
 }
 
-int CGameControllerZFNG2::DropFlagMaybe(
+int CGameControllerZFNG::DropFlagMaybe(
 	class CCharacter* pVictim,
 	class CPlayer* pKiller
 ) {
@@ -640,7 +640,7 @@ int CGameControllerZFNG2::DropFlagMaybe(
 	return HadFlag;
 }
 
-void CGameControllerZFNG2::PostReset() {
+void CGameControllerZFNG::PostReset() {
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
 		if(GameServer()->m_apPlayers[i])
@@ -654,7 +654,7 @@ void CGameControllerZFNG2::PostReset() {
 	}
 }
 
-void CGameControllerZFNG2::StartRound()
+void CGameControllerZFNG::StartRound()
 {
 	IGameController::StartRound();
 	UninfectAll();
@@ -662,13 +662,13 @@ void CGameControllerZFNG2::StartRound()
 	SetGameState(IGS_WAITING_FOR_PLAYERS);
 }
 
-void CGameControllerZFNG2::EndRound()
+void CGameControllerZFNG::EndRound()
 {
 	IGameController::EndRound();
 	SetGameState(IGS_ROUND_ENDED);
 }
 
-bool CGameControllerZFNG2::IsInfectionStarted()
+bool CGameControllerZFNG::IsInfectionStarted()
 {
 	switch (m_GameState) {
 		case IGS_WAITING_FOR_PLAYERS:
@@ -679,7 +679,7 @@ bool CGameControllerZFNG2::IsInfectionStarted()
 	}
 }
 
-int CGameControllerZFNG2::GetAutoTeam(int NotThisID)
+int CGameControllerZFNG::GetAutoTeam(int NotThisID)
 {
 	if (IsInfectionStarted()) {
 		return TEAM_INFECTED;
@@ -688,7 +688,7 @@ int CGameControllerZFNG2::GetAutoTeam(int NotThisID)
 	}
 }
 
-bool CGameControllerZFNG2::CanChangeTeam(CPlayer *pPlayer, int JoinTeam)
+bool CGameControllerZFNG::CanChangeTeam(CPlayer *pPlayer, int JoinTeam)
 {
 	if (IsInfectionStarted()) {
 		if (JoinTeam == TEAM_INFECTED || JoinTeam == TEAM_SPECTATORS) {
@@ -701,7 +701,7 @@ bool CGameControllerZFNG2::CanChangeTeam(CPlayer *pPlayer, int JoinTeam)
 	}
 }
 
-bool CGameControllerZFNG2::CanSpawn(int Team, vec2* pOutPos)
+bool CGameControllerZFNG::CanSpawn(int Team, vec2* pOutPos)
 {
 	switch (m_GameState) {
 		case IGS_NUKE_DETONATED:
@@ -713,7 +713,7 @@ bool CGameControllerZFNG2::CanSpawn(int Team, vec2* pOutPos)
 	}
 }
 
-void CGameControllerZFNG2::CountPlayers(int& NumHumans, int& NumInfected) {
+void CGameControllerZFNG::CountPlayers(int& NumHumans, int& NumInfected) {
 	// Set them to zero
 	NumHumans = 0;
 	NumInfected = 0;
@@ -732,7 +732,7 @@ void CGameControllerZFNG2::CountPlayers(int& NumHumans, int& NumInfected) {
 
 }
 
-int CGameControllerZFNG2::CalcMinimumInfected(
+int CGameControllerZFNG::CalcMinimumInfected(
 	int NumHumans,
 	int NumInfected
 ) {
@@ -744,7 +744,7 @@ int CGameControllerZFNG2::CalcMinimumInfected(
 		return 2;
 }
 
-void CGameControllerZFNG2::SpawnFlag()
+void CGameControllerZFNG::SpawnFlag()
 {
 	if (m_aFlagStandPositions[TEAM_INFECTED] != NULL) {
 		m_pFlag = new CFlag(&GameServer()->m_World, TEAM_INFECTED);
@@ -755,7 +755,7 @@ void CGameControllerZFNG2::SpawnFlag()
 	}
 }
 
-void CGameControllerZFNG2::RemoveFlag()
+void CGameControllerZFNG::RemoveFlag()
 {
 	if (m_pFlag != NULL)
 		GameServer()->m_World.DestroyEntity(m_pFlag);
@@ -763,7 +763,7 @@ void CGameControllerZFNG2::RemoveFlag()
 	m_pFlag = NULL;
 }
 
-void CGameControllerZFNG2::SpawnFlagStand(int Team)
+void CGameControllerZFNG::SpawnFlagStand(int Team)
 {
 	vec2 StandPos = m_aFlagStandPositions[Team];
 	m_apFlagStands[Team] = new CFlagStand(&GameServer()->m_World);
@@ -771,7 +771,7 @@ void CGameControllerZFNG2::SpawnFlagStand(int Team)
 	GameServer()->m_World.InsertEntity(m_apFlagStands[Team]);
 }
 
-void CGameControllerZFNG2::FinishOffZombies()
+void CGameControllerZFNG::FinishOffZombies()
 {
 	CCharacter* p = (CCharacter*)GameServer()->m_World
 		.FindFirst(CGameWorld::ENTTYPE_CHARACTER);
@@ -793,7 +793,7 @@ void CGameControllerZFNG2::FinishOffZombies()
 	}
 }
 
-void CGameControllerZFNG2::DoInitialInfections(
+void CGameControllerZFNG::DoInitialInfections(
 	int NumHumans,
 	int NumInfected
 ) {
@@ -846,7 +846,7 @@ void CGameControllerZFNG2::DoInitialInfections(
 	}
 }
 
-void CGameControllerZFNG2::UninfectAll()
+void CGameControllerZFNG::UninfectAll()
 {
 	for (int i = 0; i < MAX_CLIENTS; ++i) {
 		CPlayer* player = GameServer()->m_apPlayers[i];

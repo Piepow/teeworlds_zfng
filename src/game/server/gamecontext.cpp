@@ -14,7 +14,7 @@
 #include "gamemodes/fng2boom.h"
 #include "gamemodes/fng2boomsolo.h"
 #include "gamemodes/fng2_4teams.h"
-#include "gamemodes/zfng2.h"
+#include "gamemodes/zfng.h"
 
 //other gametypes(for modding without changing original sources)
 #include "gamecontext_additional_gametypes_includes.h"
@@ -1969,8 +1969,8 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 		m_pController = new CGameControllerFNG2BoomSolo(this);
 	else if (str_comp(m_Config->m_SvGametype, "fng24teams") == 0)
 		m_pController = new CGameControllerFNG24Teams(this);
-	else if (str_comp(m_Config->m_SvGametype, "zfng2") == 0)
-		m_pController = new CGameControllerZFNG2(this);
+	else if (str_comp(m_Config->m_SvGametype, "zfng") == 0)
+		m_pController = new CGameControllerZFNG(this);
 	else 
 #define CONTEXT_INIT_WITHOUT_CONFIG
 #include "gamecontext_additional_gametypes.h"
@@ -2063,8 +2063,8 @@ void CGameContext::OnInit(IKernel *pKernel, IMap* pMap, CConfiguration* pConfigF
 		m_pController = new CGameControllerFNG2BoomSolo(this, *pConfig);
 	else if (str_comp(pConfig->m_SvGametype, "fng24teams") == 0)
 		m_pController = new CGameControllerFNG24Teams(this, *pConfig);
-	else if (str_comp(pConfig->m_SvGametype, "zfng2") == 0)
-		m_pController = new CGameControllerZFNG2(this, *pConfig);
+	else if (str_comp(pConfig->m_SvGametype, "zfng") == 0)
+		m_pController = new CGameControllerZFNG(this, *pConfig);
 	else 
 #include "gamecontext_additional_gametypes.h"
 		m_pController = new CGameControllerFNG2(this, *pConfig);
