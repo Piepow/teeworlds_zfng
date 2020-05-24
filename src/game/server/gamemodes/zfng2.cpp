@@ -53,24 +53,35 @@ bool CGameControllerZFNG2::IsInfection() const
 
 void CGameControllerZFNG2::SetGameState(EGameState GameState)
 {
+	m_GameState = GameState;
+
 	switch (GameState)
 	{
 		case IGS_WAITING_FOR_PLAYERS:
-			m_GameState = GameState;
 			m_GameStateTimer = TIMER_INFINITE;
 			break;
 		case IGS_WAITING_FOR_INFECTION:
-			m_GameState = GameState;
-			m_GameStateTimer = Server()->TickSpeed() * 5;
+			m_GameStateTimer = Server()->TickSpeed() * 0.5;
 			IGameController::StartRound();
 			break;
 		case IGS_WAITING_FLAG:
-			m_GameState = GameState;
-			m_GameStateTimer = Server()->TickSpeed() * 2;
+			m_GameStateTimer = Server()->TickSpeed() * 0.5;
 			break;
 		case IGS_NORMAL:
 			SpawnFlag();
-			m_GameState = GameState;
+			m_GameStateTimer = TIMER_INFINITE;
+			break;
+		case IGS_NUKE_DETONATED:
+			m_Nuke = new CNuke(
+				GameServer(),
+				m_aFlagStandPositions[TEAM_HUMAN]
+			);
+			m_GameStateTimer = TIMER_INFINITE;
+			// TODO: Prevent players from spawning
+			break;
+		case IGS_ROUND_ENDED:
+			// We don't do anything here, because we rely on `m_GameOverTick`
+			// from `IGameController`
 			m_GameStateTimer = TIMER_INFINITE;
 			break;
 	}
@@ -155,6 +166,13 @@ void CGameControllerZFNG2::Tick()
 			case IGS_NORMAL:
 				if (m_pFlag != NULL)
 					DoFlag();
+				break;
+			case IGS_NUKE_DETONATED:
+				if (m_Nuke->Update()) {
+					delete m_Nuke;
+					m_Nuke = NULL;
+					EndRound();
+				}
 				break;
 		}
 	}
@@ -374,6 +392,7 @@ void CGameControllerZFNG2::DoFlagCapture()
 	GameServer()->SendChat(-1, -2, aBuf);
 	GameServer()->CreateSoundGlobal(SOUND_CTF_CAPTURE);
 	RemoveFlag();
+	SetGameState(IGS_NUKE_DETONATED);
 }
 
 void CGameControllerZFNG2::DoInactivePlayers()
@@ -638,7 +657,7 @@ void CGameControllerZFNG2::StartRound()
 void CGameControllerZFNG2::EndRound()
 {
 	IGameController::EndRound();
-	GameServer()->SendRoundStats();
+	SetGameState(IGS_ROUND_ENDED);
 }
 
 void CGameControllerZFNG2::CountPlayers(

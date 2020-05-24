@@ -4,6 +4,7 @@
 
 #include <game/server/gamecontroller.h>
 #include <game/server/broadcaster.h>
+#include <game/server/nuke.h>
 #include <base/vmath.h>
 
 class CGameControllerZFNG2 : public IGameController
@@ -23,6 +24,7 @@ public:
 		IGS_WAITING_FOR_INFECTION,
 		IGS_WAITING_FLAG,
 		IGS_NORMAL,
+		IGS_NUKE_DETONATED,
 		IGS_ROUND_ENDED
 	};
 	EGameState m_GameState;
@@ -67,5 +69,7 @@ private:
 	void DoDroppedFlag();
 	void DoFlagCapture();
 	void SpawnFlagStand(int Team);
+
+	CNuke* m_Nuke;
 };
 #endif
