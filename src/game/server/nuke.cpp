@@ -26,11 +26,18 @@ bool CNuke::Update()
 				m_Center +
 				vec2(m_Radius * cos(Angle), m_Radius * sin(Angle));
 
-			m_pGameServer->CreateExplosion(ExplosionPos, -1, WEAPON_GAME, true);
+			if (!m_pGameServer->Collision()->CheckPoint(ExplosionPos)) {
+				m_pGameServer->CreateExplosion(
+					ExplosionPos, -1, WEAPON_GAME, true
+				);
 
-			// Prevent ear-rape
-			if (i % 16 == 0) {
-				m_pGameServer->CreateSound(ExplosionPos, SOUND_GRENADE_EXPLODE);
+				// Prevent ear-rape
+				if (i % 16 == 0) {
+					m_pGameServer->CreateSound(
+						ExplosionPos,
+						SOUND_GRENADE_EXPLODE
+					);
+				}
 			}
 		}
 	}
