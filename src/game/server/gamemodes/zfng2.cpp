@@ -701,6 +701,18 @@ bool CGameControllerZFNG2::CanChangeTeam(CPlayer *pPlayer, int JoinTeam)
 	}
 }
 
+bool CGameControllerZFNG2::CanSpawn(int Team, vec2* pOutPos)
+{
+	switch (m_GameState) {
+		case IGS_NUKE_DETONATED:
+		case IGS_FINISHING_OFF_ZOMBIES:
+		case IGS_ROUND_ENDED:
+			return false;
+		default:
+			return IGameController::CanSpawn(Team, pOutPos);
+	}
+}
+
 void CGameControllerZFNG2::CountPlayers(
 	int& NumHumans,
 	int& NumInfected,

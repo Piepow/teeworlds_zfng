@@ -51,7 +51,8 @@ protected:
 
 	virtual bool IsInfectionStarted();
 	virtual int GetAutoTeam(int NotThisID);
-	virtual bool CanChangeTeam(CPlayer *pPplayer, int JoinTeam);
+	virtual bool CanChangeTeam(CPlayer* pPlayer, int JoinTeam);
+	virtual bool CanSpawn(int Team, vec2* pOutPos);
 private:
 	CBroadcaster m_Broadcaster;
 
