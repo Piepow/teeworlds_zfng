@@ -341,6 +341,13 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg, bool Respawn)
 						Server()->ClientName(m_ClientID)
 					);
 					break;
+				case TEAM_SPECTATORS:
+					str_format(
+						aBuf, sizeof(aBuf),
+						"'%s' joined the spectators",
+						Server()->ClientName(m_ClientID)
+					);
+					break;
 			}
 		} else {
 			str_format(
@@ -561,7 +568,13 @@ bool CPlayer::IsInfected()
 }
 
 // Alias for `SetTeam`
-void CPlayer::StartInfection()
+void CPlayer::Infect(bool DoChatMsg, bool Respawn)
 {
-	SetTeam(TEAM_INFECTED, true, false);
+	SetTeam(TEAM_INFECTED, DoChatMsg, Respawn);
+}
+
+// Alias for `SetTeam`
+void CPlayer::Revive(bool DoChatMsg, bool Respawn)
+{
+	SetTeam(TEAM_HUMAN, DoChatMsg, Respawn);
 }

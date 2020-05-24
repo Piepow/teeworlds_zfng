@@ -280,9 +280,9 @@ public:
 	virtual void *SnapNewItem(int Type, int ID, int Size);
 	void SnapSetStaticsize(int ItemType, int Size);
 
-	void RememberInfection(int ClientID);
-	void ForgetAllInfections();
-	bool WasClientInfectedBefore(int ClientID);
+	virtual void RememberInfection(int ClientID);
+	virtual void ForgetAllInfections();
+	virtual bool WasClientInfectedBefore(int ClientID);
 };
 
 #endif

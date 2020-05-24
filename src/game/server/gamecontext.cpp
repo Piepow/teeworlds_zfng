@@ -644,7 +644,43 @@ void CGameContext::OnClientEnter(int ClientID)
 	m_apPlayers[ClientID]->Respawn();
 	if(!m_Config->m_SvTournamentMode || m_pController->IsGameOver()) {
 		char aBuf[512];
-		str_format(aBuf, sizeof(aBuf), "'%s' entered and joined the %s", Server()->ClientName(ClientID), m_pController->GetTeamName(m_apPlayers[ClientID]->GetTeam()));
+		if (m_pController->IsInfection()) {
+			switch (m_apPlayers[ClientID]->GetTeam()) {
+				case TEAM_INFECTED:
+					str_format(
+						aBuf,
+						sizeof(aBuf),
+						"'%s' entered as a zombie",
+						Server()->ClientName(ClientID)
+					);
+					break;
+				case TEAM_HUMAN:
+					str_format(
+						aBuf,
+						sizeof(aBuf),
+						"'%s' entered as a human",
+						Server()->ClientName(ClientID)
+					);
+					break;
+				case TEAM_SPECTATORS:
+					str_format(
+						aBuf,
+						sizeof(aBuf),
+						"'%s' entered and joined the spectators",
+						Server()->ClientName(ClientID)
+					);
+					break;
+			}
+		} else {
+			str_format(
+				aBuf,
+				sizeof(aBuf),
+				"'%s' entered and joined the %s",
+				Server()->ClientName(ClientID),
+				m_pController->GetTeamName(m_apPlayers[ClientID]->GetTeam())
+			);
+		}
+
 		SendChat(-1, CGameContext::CHAT_ALL, aBuf);
 
 		str_format(aBuf, sizeof(aBuf), "team_join player='%d:%s' team=%d", ClientID, Server()->ClientName(ClientID), m_apPlayers[ClientID]->GetTeam());
@@ -664,9 +700,7 @@ void CGameContext::OnClientConnected(int ClientID)
 	//players[client_id].client_id = client_id;
 
 	if (m_pController->IsInfection() && m_pController->IsInfectionStarted())
-	{
-		m_apPlayers[ClientID]->StartInfection();
-	}
+		m_apPlayers[ClientID]->Infect(false, false);
 
 	(void)m_pController->CheckTeamBalance();
 
@@ -1555,10 +1589,33 @@ void CGameContext::ConSetTeam(IConsole::IResult *pResult, void *pUserData)
 void CGameContext::ConSetTeamAll(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
-	int Team = pSelf->m_pController->ClampTeam(pResult->GetInteger(1));
+	int Team = pSelf->m_pController->ClampTeam(pResult->GetInteger(0));
 
 	char aBuf[256];
-	str_format(aBuf, sizeof(aBuf), "All players were moved to the %s", pSelf->m_pController->GetTeamName(Team));
+
+	if (pSelf->m_pController->IsInfection()) {
+		switch (Team) {
+			case TEAM_INFECTED:
+				str_format(aBuf, sizeof(aBuf), "All players were infected");
+				break;
+			case TEAM_HUMAN:
+				str_format(aBuf, sizeof(aBuf), "All players were revived");
+				break;
+			case TEAM_SPECTATORS:
+				str_format(
+					aBuf, sizeof(aBuf),
+					"All players were moved to the spectators"
+				);
+				break;
+		}
+	} else {
+		str_format(
+			aBuf, sizeof(aBuf),
+			"All players were moved to the %s",
+			pSelf->m_pController->GetTeamName(Team)
+		);
+	}
+
 	pSelf->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
 
 	for(int i = 0; i < MAX_CLIENTS; ++i)

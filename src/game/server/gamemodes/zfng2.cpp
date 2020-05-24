@@ -13,7 +13,7 @@
 #define TICK_SPEED Server()->TickSpeed()
 #define TICK Server()->Tick()
 
-static const int gs_MinPlayers = 3;
+static const int gs_MinPlayers = 2;
 
 CGameControllerZFNG2::CGameControllerZFNG2(class CGameContext *pGameServer) :
 	IGameController((class CGameContext*)pGameServer),
@@ -188,9 +188,9 @@ void CGameControllerZFNG2::Tick()
 	DoInactivePlayers();
 
 	switch (m_GameState) {
-		case IGS_WAITING_FOR_INFECTION:
 		case IGS_WAITING_FLAG:
 		case IGS_NORMAL:
+			DoMinInfections(NumHumans, NumInfected, NumMinimumInfected);
 			DoWincheck();
 			break;
 	}
@@ -657,6 +657,7 @@ void CGameControllerZFNG2::PostReset() {
 void CGameControllerZFNG2::StartRound()
 {
 	IGameController::StartRound();
+	UninfectAll();
 	RemoveFlag();
 	SetGameState(IGS_WAITING_FOR_PLAYERS);
 }
@@ -777,5 +778,69 @@ void CGameControllerZFNG2::FinishOffZombies()
 		}
 
 		p = pNext;
+	}
+}
+
+void CGameControllerZFNG2::DoMinInfections(
+	int NumHumans,
+	int NumInfected,
+	int NumMinimumInfected
+) {
+	if (NumInfected < NumMinimumInfected) {
+		int NumToInfect = NumMinimumInfected - NumInfected;
+		while (NumToInfect > 0)
+		{
+			// Guilty until proven innocent
+			bool AllClientsHaveBeenInfectedBefore = true;
+
+			// Loop through all and infect if not infected before
+			for (int i = 0; i < MAX_CLIENTS; i++)
+			{
+				if (GameServer()->IsClientPlayer(i) &&
+					!Server()->WasClientInfectedBefore(i)
+				) {
+					// Technically this may not be accurate but having just any
+					// number of previously uninfected clients will cause the
+					// suspicion that `AllClientsHaveBeenInfectededBefore` is
+					// false because this loop is itself the method to check if
+					// `AllClientsHaveBeenInfectedBefore`
+					AllClientsHaveBeenInfectedBefore = false;
+
+					GameServer()->m_apPlayers[i]->Infect(true, false);
+
+					// remember infection because it was picked
+					// by the server (remember bad luck)
+					Server()->RememberInfection(i);
+
+					// update counters
+					NumToInfect--;
+					// not that we need these below
+					NumHumans--;
+					NumInfected++;
+
+					// check if quota is met
+					if (NumToInfect == 0)
+						break;
+				}
+			}
+
+			if (AllClientsHaveBeenInfectedBefore)
+			{
+				Server()->ForgetAllInfections();
+				// Now the next iteration of the 'while' loop should finish the
+				// job
+			}
+		}
+	}
+}
+
+void CGameControllerZFNG2::UninfectAll()
+{
+	for (int i = 0; i < MAX_CLIENTS; ++i) {
+		CPlayer* player = GameServer()->m_apPlayers[i];
+		if (player != NULL) {
+			player->m_HumanTime = 0;
+			player->Revive(false, false);
+		}
 	}
 }

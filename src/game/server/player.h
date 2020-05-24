@@ -21,11 +21,12 @@ public:
 	void Init(int CID);
 
 	bool IsInfected();
-	void StartInfection();
+	void Infect(bool DoChatMsg = true, bool Respawn = false);
+	void Revive(bool DoChatMsg = true, bool Respawn = false);
 
 	void TryRespawn();
 	void Respawn();
-	void SetTeam(int Team, bool DoChatMsg=true, bool Respawn=true);
+	void SetTeam(int Team, bool DoChatMsg = true, bool Respawn = true);
 
 	//doesnt kill the character
 	void SetTeamSilent(int Team);

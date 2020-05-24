@@ -75,6 +75,12 @@ private:
 	void DoFlagCapture();
 	void SpawnFlagStand(int Team);
 	void FinishOffZombies();
+	void DoMinInfections(
+		int NumHumans,
+		int NumInfected,
+		int NumMinimumInfected
+	);
+	void UninfectAll();
 
 	CNuke* m_Nuke;
 };

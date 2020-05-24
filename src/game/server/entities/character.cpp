@@ -828,7 +828,7 @@ void CCharacter::DieSpikes(int pPlayerID, int spikes_flag) {
 			if (GameServer()->m_pController->IsInfection())
 			{
 				if (!GetPlayer()->IsInfected())
-					GetPlayer()->StartInfection();
+					GetPlayer()->Infect(true, false);
 			}
 		}
 		//if not frozen or selfkill
