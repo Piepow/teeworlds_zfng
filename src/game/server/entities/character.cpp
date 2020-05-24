@@ -824,6 +824,12 @@ void CCharacter::DieSpikes(int pPlayerID, int spikes_flag) {
 					GameServer()->CreateSoundGlobal(SOUND_CTF_GRAB_PL, m_pPlayer->GetCID());
 				}
 			}
+
+			if (GameServer()->m_pController->IsInfection())
+			{
+				if (!GetPlayer()->IsInfected())
+					GetPlayer()->StartInfection();
+			}
 		}
 		//if not frozen or selfkill
 		else {
@@ -847,14 +853,7 @@ void CCharacter::DieSpikes(int pPlayerID, int spikes_flag) {
 		GameServer()->m_World.RemoveEntity(this);
 		Destroy();
 		GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCID());
-
-		if (GameServer()->m_pController->IsInfection())
-		{
-			if (!GetPlayer()->IsInfected())
-				GetPlayer()->StartInfection();
-		}
 	}
-
 }
 
 bool CCharacter::IsFalseSpike(int Team, int spike_flag) {
