@@ -10,8 +10,8 @@
 #define TICK m_pGameServer->Server()->Tick()
 #define GAME_SERVER m_pGameServer
 
-CBroadcaster::CBroadcaster(class CGameContext *pGameServer)
-: m_pGameServer(pGameServer)
+CBroadcaster::CBroadcaster(class CGameContext *pGameServer) :
+	m_pGameServer(pGameServer)
 {
 	Reset();
 }
