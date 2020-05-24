@@ -117,8 +117,8 @@ void CGameControllerZFNG2::Tick()
 
 	// `NumMinimumInfected` is the least number of tees that must be infected,
 	// which depends on the player count.
-	int NumHumans, NumInfected, NumMinimumInfected;
-	CountPlayers(NumHumans, NumInfected, NumMinimumInfected);
+	int NumHumans, NumInfected;
+	CountPlayers(NumHumans, NumInfected);
 
 	if (m_GameStateTimer == 0)
 	{
@@ -126,6 +126,7 @@ void CGameControllerZFNG2::Tick()
 		switch (m_GameState)
 		{
 			case IGS_WAITING_FOR_INFECTION:
+				DoInitialInfections(NumHumans, NumInfected);
 				SetGameState(IGS_WAITING_FLAG);
 				break;
 			case IGS_WAITING_FLAG:
@@ -190,7 +191,6 @@ void CGameControllerZFNG2::Tick()
 	switch (m_GameState) {
 		case IGS_WAITING_FLAG:
 		case IGS_NORMAL:
-			DoMinInfections(NumHumans, NumInfected, NumMinimumInfected);
 			DoWincheck();
 			break;
 	}
@@ -713,11 +713,7 @@ bool CGameControllerZFNG2::CanSpawn(int Team, vec2* pOutPos)
 	}
 }
 
-void CGameControllerZFNG2::CountPlayers(
-	int& NumHumans,
-	int& NumInfected,
-	int& NumMinimumInfected
-) {
+void CGameControllerZFNG2::CountPlayers(int& NumHumans, int& NumInfected) {
 	// Set them to zero
 	NumHumans = 0;
 	NumInfected = 0;
@@ -734,14 +730,18 @@ void CGameControllerZFNG2::CountPlayers(
 		}
 	}
 
-	// Figure out how many tees to infect at the start of a round, which
-	// depends on number of players
+}
+
+int CGameControllerZFNG2::CalcMinimumInfected(
+	int NumHumans,
+	int NumInfected
+) {
 	if (NumHumans + NumInfected <= 1)
-		NumMinimumInfected = 0;
+		return 0;
 	else if (NumHumans + NumInfected <= 3)
-		NumMinimumInfected = 1;
+		return 1;
 	else
-		NumMinimumInfected = 2;
+		return 2;
 }
 
 void CGameControllerZFNG2::SpawnFlag()
@@ -793,11 +793,11 @@ void CGameControllerZFNG2::FinishOffZombies()
 	}
 }
 
-void CGameControllerZFNG2::DoMinInfections(
+void CGameControllerZFNG2::DoInitialInfections(
 	int NumHumans,
-	int NumInfected,
-	int NumMinimumInfected
+	int NumInfected
 ) {
+	int NumMinimumInfected = CalcMinimumInfected(NumHumans, NumInfected);
 	if (NumInfected < NumMinimumInfected) {
 		int NumToInfect = NumMinimumInfected - NumInfected;
 		while (NumToInfect > 0)

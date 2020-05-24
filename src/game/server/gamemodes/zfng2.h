@@ -56,11 +56,11 @@ protected:
 private:
 	CBroadcaster m_Broadcaster;
 
-	void CountPlayers(
-		int& NumHumans,
-		int& NumInfected,
-		int& NumMinimumInfected
-	);
+	void CountPlayers(int& NumHumans, int& NumInfected);
+
+	// Calculate how many tees to infect at the start of a round, which depends
+	// on number of players
+	int CalcMinimumInfected(int NumHumans, int NumInfected);
 
 	vec2 m_aFlagStandPositions[2];
 	class CFlagStand* m_apFlagStands[2];
@@ -76,11 +76,7 @@ private:
 	void DoFlagCapture();
 	void SpawnFlagStand(int Team);
 	void FinishOffZombies();
-	void DoMinInfections(
-		int NumHumans,
-		int NumInfected,
-		int NumMinimumInfected
-	);
+	void DoInitialInfections(int NumHumans, int NumInfected);
 	void UninfectAll();
 
 	CNuke* m_Nuke;
