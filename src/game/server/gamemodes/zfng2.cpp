@@ -390,7 +390,7 @@ void CGameControllerZFNG2::DoFlagCapture()
 
 	str_format(
 		aBuf, sizeof(aBuf),
-		"'%s' captured the flag (%d.%s%d seconds)",
+		"'%s' detonated the nuke (%d.%s%d seconds)",
 		Server()->ClientName(carrierCid),
 		(int)CaptureTime % 60,
 		((int)(CaptureTime * 100) % 100) < 10 ? "0" : "",
