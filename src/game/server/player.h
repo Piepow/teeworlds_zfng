@@ -162,7 +162,7 @@ public:
 	int m_LastActionTick;
 	int m_TeamChangeTick;
 
-	int m_HumanTime;
+	int m_HumanTime; // TODO: Currently unused
 	int m_InfectionStartTick;
 
 	struct

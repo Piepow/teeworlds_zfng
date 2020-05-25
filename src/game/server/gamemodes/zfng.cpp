@@ -663,7 +663,23 @@ void CGameControllerZFNG::EndRound()
 {
 	IGameController::EndRound();
 	SetGameState(IGS_ROUND_ENDED);
-	GameServer()->SendRoundStats();
+	AnnounceWinners();
+}
+
+void CGameControllerZFNG::AnnounceWinners()
+{
+	char aBuf[64];
+	if (m_NumHumans == 0) {
+		str_format(aBuf, sizeof(aBuf), "No humans survived");
+	} else if (m_NumHumans == 1) {
+		str_format(aBuf, sizeof(aBuf), "1 human survived");
+	} else {
+		str_format(
+			aBuf, sizeof(aBuf),
+			"%d humans survived", m_NumHumans
+		);
+	}
+	GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
 }
 
 bool CGameControllerZFNG::IsInfectionStarted()

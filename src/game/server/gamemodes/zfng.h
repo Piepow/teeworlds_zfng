@@ -78,9 +78,12 @@ private:
 	void DoDroppedFlag();
 	void DoFlagCapture();
 	void SpawnFlagStand(int Team);
+
 	void FinishOffZombies();
 	void DoInitialInfections();
 	void UninfectAll();
+
+	void AnnounceWinners();
 
 	CNuke* m_Nuke;
 };
