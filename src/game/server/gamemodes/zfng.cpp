@@ -870,7 +870,7 @@ void CGameControllerZFNG::RemoveFlag()
 void CGameControllerZFNG::SpawnFlagStand(int Team)
 {
 	vec2 StandPos = m_aFlagStandPositions[Team];
-	m_apFlagStands[Team] = new CFlagStand(&GameServer()->m_World);
+	m_apFlagStands[Team] = new CFlagStand(&GameServer()->m_World, Team);
 	m_apFlagStands[Team]->m_Pos = StandPos;
 	GameServer()->m_World.InsertEntity(m_apFlagStands[Team]);
 }

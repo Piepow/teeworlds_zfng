@@ -4,17 +4,32 @@
 #include <game/server/gamecontext.h>
 #include "flag_stand.h"
 
-CFlagStand::CFlagStand(CGameWorld *pGameWorld) :
+#define TICK_SPEED Server()->TickSpeed()
+#define TICK Server()->Tick()
+
+CFlagStand::CFlagStand(CGameWorld *pGameWorld, int Team) :
 	CEntity(pGameWorld, CGameWorld::ENTTYPE_FLAG_STAND)
 {
-	for (int i = 0; i < NUM_LASER_DOTS; i++)
-		m_aLaserDotIDs[i] = Server()->SnapNewID();
+	m_Team = Team;
+
+	for (int i = 0; i < NUM_OUTER_DOTS; i++)
+		m_aOuterDots[i] = Server()->SnapNewID();
+
+	if (m_Team == TEAM_HUMAN) {
+		for (int i = 0; i < NUM_INNER_DOTS; i++)
+			m_aInnerDots[i] = Server()->SnapNewID();
+	}
 }
 
 CFlagStand::~CFlagStand()
 {
-	for (int i = 0; i < NUM_LASER_DOTS; ++i)
-		Server()->SnapFreeID(m_aLaserDotIDs[i]);
+	for (int i = 0; i < NUM_OUTER_DOTS; ++i)
+		Server()->SnapFreeID(m_aOuterDots[i]);
+
+	if (m_Team == TEAM_HUMAN) {
+		for (int i = 0; i < NUM_INNER_DOTS; ++i)
+			Server()->SnapFreeID(m_aInnerDots[i]);
+	}
 }
 
 void CFlagStand::Snap(int SnappingClient)
@@ -22,13 +37,23 @@ void CFlagStand::Snap(int SnappingClient)
 	if (NetworkClipped(SnappingClient))
 		return;
 
-	// Make a pretty ring of laser dots
-	for (int i = 0; i < NUM_LASER_DOTS; i++)
+	SnapOuterDots();
+
+	if (m_Team == TEAM_HUMAN)
+		SnapInnerDots();
+}
+
+void CFlagStand::SnapOuterDots() {
+	float AngularOffset = (float)(TICK % 500) / 500.0f * 2.0f * pi;
+
+	for (int i = 0; i < NUM_OUTER_DOTS; i++)
 	{
-		float Angle = static_cast<float>(i) * 2.0 * pi / NUM_LASER_DOTS;
+		float Angle =
+			static_cast<float>(i) * 2.0f * pi / NUM_OUTER_DOTS +
+			AngularOffset;
 		float Radius = 100.0f;
 		vec2 Offset = vec2(0.0f, -28.0f);
-		vec2 LaserPos =
+		vec2 Pos =
 			m_Pos +
 			vec2(Radius * cos(Angle), Radius * sin(Angle)) +
 			Offset;
@@ -37,18 +62,53 @@ void CFlagStand::Snap(int SnappingClient)
 			static_cast<CNetObj_Projectile *>(
 				Server()->SnapNewItem(
 					NETOBJTYPE_PROJECTILE,
-					m_aLaserDotIDs[i],
+					m_aOuterDots[i],
 					sizeof(CNetObj_Projectile)
 				)
 			);
 
 		if (pObj)
 		{
-			pObj->m_X = (int)LaserPos.x;
-			pObj->m_Y = (int)LaserPos.y;
+			pObj->m_X = (int)Pos.x;
+			pObj->m_Y = (int)Pos.y;
 			pObj->m_VelX = 0;
 			pObj->m_VelY = 0;
 			pObj->m_Type = WEAPON_HAMMER;
+		}
+	}
+}
+
+void CFlagStand::SnapInnerDots() {
+	float AngularOffset = (float)(TICK % 250) / 250.0f * 2.0f * pi;
+
+	for (int i = 0; i < NUM_INNER_DOTS; i++)
+	{
+		float Angle =
+			static_cast<float>(i) * 2.0f * pi / NUM_INNER_DOTS +
+			AngularOffset;
+		float Radius = 50.0f;
+		vec2 Offset = vec2(0.0f, -28.0f);
+		vec2 Pos =
+			m_Pos +
+			vec2(Radius * cos(Angle), Radius * sin(Angle)) +
+			Offset;
+
+		CNetObj_Laser *pObj =
+			static_cast<CNetObj_Laser *>(
+				Server()->SnapNewItem(
+					NETOBJTYPE_LASER,
+					m_aInnerDots[i],
+					sizeof(CNetObj_Laser)
+				)
+			);
+
+		if (pObj)
+		{
+			pObj->m_X = (int)Pos.x;
+			pObj->m_Y = (int)Pos.y;
+			pObj->m_FromX = (int)Pos.x;
+			pObj->m_FromY = (int)Pos.y;
+			pObj->m_StartTick = TICK;
 		}
 	}
 }

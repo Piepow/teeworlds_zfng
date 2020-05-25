@@ -7,14 +7,22 @@
 class CFlagStand : public CEntity
 {
 public:
-	enum { NUM_LASER_DOTS = 20 };
+	enum {
+		NUM_INNER_DOTS = 10,
+		NUM_OUTER_DOTS = 12
+	};
 public:
-	CFlagStand(CGameWorld *pGameWorld);
+	CFlagStand(CGameWorld *pGameWorld, int Team);
 	virtual ~CFlagStand();
 
 	virtual void Snap(int SnappingClient);
 private:
-	int m_aLaserDotIDs[NUM_LASER_DOTS];
+	int m_Team;
+	int m_aOuterDots[NUM_OUTER_DOTS];
+	int m_aInnerDots[NUM_INNER_DOTS];
+
+	void SnapOuterDots();
+	void SnapInnerDots();
 };
 
 #endif
