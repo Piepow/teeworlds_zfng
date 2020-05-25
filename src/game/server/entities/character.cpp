@@ -801,7 +801,10 @@ void CCharacter::DieSpikes(int pPlayerID, int spikes_flag) {
 			Msg.m_ModeSpecial = ModeSpecial;
 			GameServer()->SendPackMsg(&Msg, MSGFLAG_VITAL);
 
-			if (GameServer()->m_pController->IsTeamplay() && IsFalseSpike(GameServer()->m_apPlayers[pPlayerID]->GetTeam(), spikes_flag)) {
+			// Don't use false shrines in infection
+			if (!GameServer()->m_pController->IsInfection() &&
+			    GameServer()->m_pController->IsTeamplay() &&
+				IsFalseSpike(GameServer()->m_apPlayers[pPlayerID]->GetTeam(), spikes_flag)) {
 				CCharacter* pKiller = ((CPlayer*)GameServer()->m_apPlayers[pPlayerID])->GetCharacter();
 				if (pKiller && !pKiller->IsFrozen()) {
 					pKiller->Freeze(g_Config.m_SvFalseSpikeFreeze);
@@ -816,13 +819,8 @@ void CCharacter::DieSpikes(int pPlayerID, int spikes_flag) {
 					pKiller->SetEmote(EMOTE_HAPPY, Server()->Tick() + Server()->TickSpeed());
 				}
 
-				if (GameServer()->m_pController->IsTeamplay()) {
-					GameServer()->CreateSoundTeam(m_Pos, SOUND_CTF_CAPTURE, GameServer()->m_apPlayers[pPlayerID]->GetTeam(), pPlayerID);
-					GameServer()->CreateSoundTeam(m_Pos, SOUND_CTF_GRAB_PL, m_pPlayer->GetTeam(), m_pPlayer->GetCID());
-				} else {
-					GameServer()->CreateSoundGlobal(SOUND_CTF_CAPTURE, pPlayerID);
-					GameServer()->CreateSoundGlobal(SOUND_CTF_GRAB_PL, m_pPlayer->GetCID());
-				}
+				GameServer()->CreateSound(m_Pos, SOUND_NINJA_HIT);
+				GameServer()->CreateSound(m_Pos, SOUND_TEE_CRY);
 			}
 
 			if (GameServer()->m_pController->IsInfection())

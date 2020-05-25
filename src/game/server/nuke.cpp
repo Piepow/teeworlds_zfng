@@ -3,7 +3,7 @@
 #define TICK_SPEED m_pGameServer->Server()->TickSpeed()
 #define TICK m_pGameServer->Server()->Tick()
 
-static const int gs_MaxRadius = 50 * 32; // Units: px
+static const int gs_MaxRadius = 30 * 32; // Units: px
 
 CNuke::CNuke(class CGameContext* pGameServer, vec2 Center) :
 	m_pGameServer(pGameServer),

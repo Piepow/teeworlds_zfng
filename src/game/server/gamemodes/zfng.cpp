@@ -290,7 +290,7 @@ void CGameControllerZFNG::DoFlag()
 
 void CGameControllerZFNG::ReturnFlag(CCharacter* pCharacter)
 {
-	pCharacter->GetPlayer()->m_Score += 1;
+	pCharacter->GetPlayer()->m_Score++;
 	int cid = pCharacter->GetPlayer()->GetCID();
 
 	char aBuf[256];
@@ -314,7 +314,7 @@ void CGameControllerZFNG::TakeFlag(CCharacter* pCharacter)
 
 	m_pFlag->m_AtStand = 0;
 	m_pFlag->m_pCarryingCharacter = pCharacter;
-	pCharacter->GetPlayer()->m_Score += 1;
+	pCharacter->GetPlayer()->m_Score++;
 	int cid = pCharacter->GetPlayer()->GetCID();
 
 	char aBuf[256];
@@ -465,21 +465,12 @@ void CGameControllerZFNG::DoWincheck()
 			return;
 		}
 
-		bool ScoreLimitMet =
-			m_Config.m_SvScorelimit > 0 && (
-				m_aTeamscore[TEAM_RED] >= m_Config.m_SvScorelimit ||
-				m_aTeamscore[TEAM_BLUE] >= m_Config.m_SvScorelimit
-			);
-
 		bool TimeLimitMet =
 			m_Config.m_SvTimelimit > 0 &&
 			(TICK - m_RoundStartTick) >= m_Config.m_SvTimelimit * TICK_SPEED * 60;
 
-		if (ScoreLimitMet || TimeLimitMet) {
-			if (m_aTeamscore[TEAM_RED] != m_aTeamscore[TEAM_BLUE])
-				EndRound();
-			else
-				m_SuddenDeath = 1;
+		if (TimeLimitMet) {
+			EndRound();
 		}
 	}
 }
@@ -547,44 +538,65 @@ int CGameControllerZFNG::OnCharacterDeath(
 	class CPlayer *pKiller,
 	int Weapon
 ) {
-	// do scoreing
-	if(!pKiller || Weapon == WEAPON_GAME)
+	// Scoring
+	if (!pKiller || Weapon == WEAPON_GAME) {
 		return DropFlagMaybe(pVictim, pKiller);
-	if(pKiller == pVictim->GetPlayer())
-		pVictim->GetPlayer()->m_Stats.m_Selfkills++; // suicide
-	else
-	{
+	}
+
+	if (pKiller == pVictim->GetPlayer()) {
+		pVictim->GetPlayer()->m_Score--; // Suicide
+	} else {
 		if (Weapon == WEAPON_RIFLE || Weapon == WEAPON_GRENADE){
-			if(IsTeamplay() && pVictim->GetPlayer()->GetTeam() == pKiller->GetTeam())
-				pKiller->m_Stats.m_Teamkills++; // teamkill
-			else {
-				pKiller->m_Stats.m_Kills++; // normal kill
-				pVictim->GetPlayer()->m_Stats.m_Hits++; //hits by oponent
-				m_aTeamscore[pKiller->GetTeam()]++; //make this config.?
+			if (pVictim->GetPlayer()->GetTeam() == pKiller->GetTeam()) {
+				pKiller->m_Score--; // Teamkill
+			} else {
+				pKiller->m_Score++; // Normal kill
+				if (m_pFlag && m_pFlag->m_pCarryingCharacter == pVictim)
+				{
+					GameServer()->CreateSoundGlobal(SOUND_PLAYER_PAIN_LONG);
+					pKiller->m_Score++; // Froze flag carrier
+				}
 			}
-		} else if(Weapon == WEAPON_SPIKE_NORMAL){
-			if(pKiller->GetCharacter()) GameServer()->MakeLaserTextPoints(pKiller->GetCharacter()->m_Pos, pKiller->GetCID(), m_Config.m_SvPlayerScoreSpikeNormal);
-			pKiller->m_Stats.m_GrabsNormal++;
-			pVictim->GetPlayer()->m_Stats.m_Deaths++;
-			pVictim->GetPlayer()->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*.5f;
-		} else if(Weapon == WEAPON_SPIKE_RED || Weapon == WEAPON_SPIKE_BLUE){
-			pKiller->m_Stats.m_GrabsTeam++;
-			pVictim->GetPlayer()->m_Stats.m_Deaths++;
-			if(pKiller->GetCharacter()) GameServer()->MakeLaserTextPoints(pKiller->GetCharacter()->m_Pos, pKiller->GetCID(), m_Config.m_SvPlayerScoreSpikeTeam);
-			pVictim->GetPlayer()->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*.5f;
-		} else if(Weapon == WEAPON_SPIKE_GOLD){
-			pKiller->m_Stats.m_GrabsGold++;
-			pVictim->GetPlayer()->m_Stats.m_Deaths++;
-			pVictim->GetPlayer()->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*.5f;
-			if(pKiller->GetCharacter()) GameServer()->MakeLaserTextPoints(pKiller->GetCharacter()->m_Pos, pKiller->GetCID(), m_Config.m_SvPlayerScoreSpikeGold);
-		} else if(Weapon == WEAPON_HAMMER){ //only called if team mate unfroze you
-			pKiller->m_Stats.m_Unfreezes++;
+
+		} else if (Weapon == WEAPON_SPIKE_NORMAL) {
+			pVictim->GetPlayer()->m_RespawnTick = TICK + TICK_SPEED * 0.5f;
+			pKiller->m_Score += m_Config.m_SvPlayerScoreSpikeNormal;
+			if (pKiller->GetCharacter())
+				GameServer()->MakeLaserTextPoints(
+					pKiller->GetCharacter()->m_Pos,
+					pKiller->GetCID(),
+					m_Config.m_SvPlayerScoreSpikeNormal
+				);
+		} else if (Weapon == WEAPON_SPIKE_RED || Weapon == WEAPON_SPIKE_BLUE) {
+			pVictim->GetPlayer()->m_RespawnTick = TICK + TICK_SPEED * 0.5f;
+			pKiller->m_Score += m_Config.m_SvPlayerScoreSpikeTeam;
+			if (pKiller->GetCharacter())
+				GameServer()->MakeLaserTextPoints(
+					pKiller->GetCharacter()->m_Pos,
+					pKiller->GetCID(),
+					m_Config.m_SvPlayerScoreSpikeTeam
+				);
+		} else if (Weapon == WEAPON_SPIKE_GOLD) {
+			pVictim->GetPlayer()->m_RespawnTick = TICK + TICK_SPEED * 0.5f;
+			pKiller->m_Score += m_Config.m_SvPlayerScoreSpikeGold;
+			if (pKiller->GetCharacter())
+				GameServer()->MakeLaserTextPoints(
+					pKiller->GetCharacter()->m_Pos,
+					pKiller->GetCID(),
+					m_Config.m_SvPlayerScoreSpikeGold
+				);
+		} else if (Weapon == WEAPON_HAMMER) {
+			// Only called if teammate unfroze you
+			pKiller->m_Score++;
 		}
 	}
-	if(Weapon == WEAPON_SELF){
-		pVictim->GetPlayer()->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*.75f;
-	} else if (Weapon == WEAPON_WORLD)
-		pVictim->GetPlayer()->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*.75f;
+
+	if (Weapon == WEAPON_SELF) {
+		pVictim->GetPlayer()->m_RespawnTick = TICK + TICK_SPEED * 0.75f;
+	} else if (Weapon == WEAPON_WORLD) {
+		pVictim->GetPlayer()->m_RespawnTick = TICK + TICK_SPEED * 0.75f;
+	}
+
 	if (Weapon != WEAPON_RIFLE &&
 		Weapon != WEAPON_GRENADE &&
 		Weapon != WEAPON_HAMMER
@@ -616,9 +628,8 @@ int CGameControllerZFNG::DropFlagMaybe(
 			m_pFlag->m_pCarryingCharacter = 0;
 			m_pFlag->m_Vel = vec2(0,0);
 
-			if (pKiller &&
-				pKiller->GetTeam() != pVictim->GetPlayer()->GetTeam()
-			) { pKiller->m_Score++; }
+			// Don't reward points for sacrificing the flagger, because we
+			// already award points for freezing him/her
 
 			HadFlag |= 1;
 		}
@@ -628,15 +639,14 @@ int CGameControllerZFNG::DropFlagMaybe(
 }
 
 void CGameControllerZFNG::PostReset() {
-	for(int i = 0; i < MAX_CLIENTS; i++)
+	for (int i = 0; i < MAX_CLIENTS; i++)
 	{
-		if(GameServer()->m_apPlayers[i])
+		if (GameServer()->m_apPlayers[i])
 		{
 			GameServer()->m_apPlayers[i]->Respawn();
 			GameServer()->m_apPlayers[i]->m_Score = 0;
-			GameServer()->m_apPlayers[i]->ResetStats();
-			GameServer()->m_apPlayers[i]->m_ScoreStartTick = Server()->Tick();
-			GameServer()->m_apPlayers[i]->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
+			GameServer()->m_apPlayers[i]->m_ScoreStartTick = TICK;
+			GameServer()->m_apPlayers[i]->m_RespawnTick = TICK + TICK_SPEED / 2;
 		}
 	}
 }
@@ -653,6 +663,7 @@ void CGameControllerZFNG::EndRound()
 {
 	IGameController::EndRound();
 	SetGameState(IGS_ROUND_ENDED);
+	GameServer()->SendRoundStats();
 }
 
 bool CGameControllerZFNG::IsInfectionStarted()
@@ -714,15 +725,10 @@ void CGameControllerZFNG::CountPlayers() {
 	{
 		// Check that the player is able to play (not spectating)
 		if (GameServer()->IsClientPlayer(i)) {
-			// Don't count players that are dead and can't spawn
-			CCharacter* pCharacter = GameServer()->GetPlayerChar(i);
-			bool isAlive = pCharacter && pCharacter->IsAlive();
-			if (CanSpawn() || isAlive) {
-				if (GameServer()->m_apPlayers[i]->IsInfected())
-					m_NumInfected++;
-				else
-					m_NumHumans++;
-			}
+			if (GameServer()->m_apPlayers[i]->IsInfected())
+				m_NumInfected++;
+			else
+				m_NumHumans++;
 		}
 	}
 

@@ -63,7 +63,7 @@ CGameContext::CGameContext(int Resetting, CConfiguration* pConfig)
 	Construct(Resetting);
 }
 
-CGameContext::CGameContext() 
+CGameContext::CGameContext()
 {
 	m_Config = &g_Config;
 	Construct(NO_RESET);
@@ -75,7 +75,7 @@ CGameContext::~CGameContext()
 		delete m_apPlayers[i];
 	if(!m_Resetting)
 		delete m_pVoteOptionHeap;
-	
+
 	sServerCommand* pCmd = m_FirstServerCommand;
 	while(pCmd){
 		sServerCommand* pThis = pCmd;
@@ -91,7 +91,7 @@ void CGameContext::Clear()
 	CVoteOptionServer *pVoteOptionLast = m_pVoteOptionLast;
 	int NumVoteOptions = m_NumVoteOptions;
 	CTuningParams Tuning = m_Tuning;
-	
+
 	CConfiguration* pConfig = m_Config;
 
 	m_Resetting = true;
@@ -156,7 +156,7 @@ void CGameContext::CreateDamageInd(vec2 Pos, float Angle, int Amount, int Team, 
 				pEvent->m_Y = (int)Pos.y;
 				pEvent->m_Angle = (int)(f*256.0f);
 			}
-		}		
+		}
 	}
 }
 
@@ -289,7 +289,7 @@ void CGameContext::CreateSoundGlobal(int Sound, int Target)
 	int Flag = MSGFLAG_VITAL;
 	if(Target != -1)
 		Flag |= MSGFLAG_NORECORD;
-	Server()->SendPackMsg(&Msg, Flag, Target);	
+	Server()->SendPackMsg(&Msg, Flag, Target);
 }
 
 
@@ -313,7 +313,7 @@ void CGameContext::SendChat(int ChatterClientID, int Team, const char *pText, in
 			str_format(aBuf, sizeof(aBuf), "*** %s", pText);
 		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, Team!=CHAT_ALL?"teamchat":"chat", aBuf);
 	}
-	
+
 	if(Team == CHAT_ALL)
 	{
 		CNetMsg_Sv_Chat Msg;
@@ -477,7 +477,7 @@ void CGameContext::SendTuningParams(int ClientID)
 void CGameContext::SendFakeTuningParams(int ClientID)
 {
 	static CTuningParams FakeTuning;
-	
+
 	FakeTuning.m_GroundControlSpeed = 0;
 	FakeTuning.m_GroundJumpImpulse = 0;
 	FakeTuning.m_GroundControlAccel = 0;
@@ -487,7 +487,7 @@ void CGameContext::SendFakeTuningParams(int ClientID)
 	FakeTuning.m_HookDragSpeed = 0;
 	FakeTuning.m_HookDragAccel = 0;
 	FakeTuning.m_HookFireSpeed = 0;
-	
+
 	CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
 	int *pParams = (int *)&FakeTuning;
 	for(unsigned i = 0; i < sizeof(FakeTuning)/sizeof(int); i++)
@@ -499,7 +499,7 @@ void CGameContext::SwapTeams()
 {
 	if(!m_pController->IsTeamplay())
 		return;
-	
+
 	SendChat(-1, CGameContext::CHAT_ALL, "Teams were swapped");
 
 	for(int i = 0; i < MAX_CLIENTS; ++i)
@@ -770,15 +770,15 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
 			CNetMsg_Cl_Say *pMsg = (CNetMsg_Cl_Say *)pRawMsg;
 			int Team = pMsg->m_Team ? pPlayer->GetTeam() : CGameContext::CHAT_ALL;
-			
+
 			if(m_Config->m_SvTournamentMode) {
 				if(pPlayer->GetTeam() == TEAM_SPECTATORS && Team == CGameContext::CHAT_ALL && !m_pController->IsGameOver())
-				{					
+				{
 					SendChatTarget(ClientID, "Spectators aren't allowed to write to global chat during a tournament game.");
 					return;
 				}
 			}
-			
+
 			// trim right and set maximum length to 128 utf8-characters
 			int Length = 0;
 			const char *p = pMsg->m_pMessage;
@@ -1107,8 +1107,8 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			pPlayer->m_LastEmote = Server()->Tick();
 			++pPlayer->m_Stats.m_NumEmotes;
 
-			SendEmoticon(ClientID, pMsg->m_Emoticon); 
-			
+			SendEmoticon(ClientID, pMsg->m_Emoticon);
+
 			int eicon = EMOTE_NORMAL;
 			switch (pMsg->m_Emoticon) {
 			case EMOTICON_OOP: eicon = EMOTE_PAIN; break;
@@ -1289,7 +1289,7 @@ void CGameContext::AddServerCommand(const char* pCmd, const char* pDesc, const c
 	if(!pCmd) return;
 	sServerCommand* pFindCmd = FindCommand(pCmd);
 	if(!pFindCmd){
-		pFindCmd = new sServerCommand(pCmd, pDesc, pArgFormat, pFunc);	
+		pFindCmd = new sServerCommand(pCmd, pDesc, pArgFormat, pFunc);
 		AddServerCommandSorted(pFindCmd);
 	} else {
 		pFindCmd->m_Func = pFunc;
@@ -1302,9 +1302,9 @@ void CGameContext::ExecuteServerCommand(int pClientID, const char* pLine){
 	if(!pLine || !*pLine) return;
 	const char* pCmdEnd = pLine;
 	while(*pCmdEnd && !is_whitespace(*pCmdEnd)) ++pCmdEnd;
-	
+
 	const char* pArgs = (*pCmdEnd) ? pCmdEnd + 1 : 0;
-	
+
 	sServerCommand* pCmd = FindCommand(pLine);
 	if(pCmd) pCmd->ExecuteCommand(this, pClientID, pArgs);
 	else SendChatTarget(pClientID, "Server command not found");
@@ -1312,7 +1312,7 @@ void CGameContext::ExecuteServerCommand(int pClientID, const char* pLine){
 
 void CGameContext::CmdStats(CGameContext* pContext, int pClientID, const char** pArgs, int ArgNum){
 	CPlayer* p = pContext->m_apPlayers[pClientID];
-	
+
 	char buff[600];
 
 	str_format(buff, 600, "╔═════════ Statistics ═════════\n"
@@ -1344,7 +1344,7 @@ void CGameContext::CmdStats(CGameContext* pContext, int pClientID, const char** 
 
 void CGameContext::CmdWhisper(CGameContext* pContext, int pClientID, const char** pArgs, int ArgNum){
 	CPlayer* p = pContext->m_apPlayers[pClientID];
-	
+
 	if (ArgNum > 1) {
 
 		int max = 0;
@@ -1388,7 +1388,7 @@ void CGameContext::CmdWhisper(CGameContext* pContext, int pClientID, const char*
 				else {
 					pContext->SendChat(pClientID, CHAT_WHISPER_RECV, (*pArgs + max + 1), maxPlayerID);
 				}
-				
+
 
 				if(p->m_ClientVersion != CPlayer::CLIENT_VERSION_DDNET) {
 					str_format(buff, 256, "[→ %s] %s", pContext->Server()->ClientName(maxPlayerID), (*pArgs + max + 1));
@@ -1411,7 +1411,7 @@ void CGameContext::CmdWhisper(CGameContext* pContext, int pClientID, const char*
 
 void CGameContext::CmdConversation(CGameContext* pContext, int pClientID, const char** pArgs, int ArgNum){
 	CPlayer* p = pContext->m_apPlayers[pClientID];
-	
+
 	if (ArgNum >= 1) {
 		if (p->m_WhisperPlayer.PlayerID != -1) {
 			if (strcmp(pContext->Server()->ClientName(p->m_WhisperPlayer.PlayerID), p->m_WhisperPlayer.PlayerName) == 0) {
@@ -1441,7 +1441,7 @@ void CGameContext::CmdConversation(CGameContext* pContext, int pClientID, const 
 
 void CGameContext::CmdHelp(CGameContext* pContext, int pClientID, const char** pArgs, int ArgNum){
 	CPlayer* p = pContext->m_apPlayers[pClientID];
-	
+
 	if (ArgNum != 0) {
 		sServerCommand* pCmd = pContext->FindCommand(pArgs[0]);
 		if(pCmd) {
@@ -1452,20 +1452,20 @@ void CGameContext::CmdHelp(CGameContext* pContext, int pClientID, const char** p
 	}
 	else {
 		pContext->SendChatTarget(pClientID, "command list: type /help <command> for more information");
-		
+
 		sServerCommand* pCmd = pContext->m_FirstServerCommand;
 		char buff[200];
 		while(pCmd){
 			str_format(buff, 200, "/%s %s", pCmd->m_Cmd, (pCmd->m_ArgFormat) ? pCmd->m_ArgFormat : "");
 			pContext->SendChatTarget(pClientID, buff);
-			pCmd = pCmd->m_NextCommand;			
+			pCmd = pCmd->m_NextCommand;
 		}
 	}
 }
 
 void CGameContext::CmdEmote(CGameContext* pContext, int pClientID, const char** pArgs, int ArgNum){
 	CPlayer* pPlayer = pContext->m_apPlayers[pClientID];
-	
+
 	if (ArgNum > 0) {
 		if (!str_comp_nocase_whitespace(pArgs[0], "angry"))
 				pPlayer->m_Emotion = EMOTE_ANGRY;
@@ -1483,10 +1483,10 @@ void CGameContext::CmdEmote(CGameContext* pContext, int pClientID, const char** 
 				pPlayer->m_Emotion = EMOTE_NORMAL;
 			else
 				pContext->SendChatTarget(pClientID, "Unknown emote... Say /emote");
-			
+
 			int Duration = pContext->Server()->TickSpeed();
 			if(ArgNum > 1) Duration = str_toint(pArgs[1]);
-			
+
 			pPlayer->m_EmotionDuration = Duration * pContext->Server()->TickSpeed();
 	} else {
 		//ddrace like
@@ -1636,9 +1636,9 @@ void CGameContext::ConShuffleTeams(IConsole::IResult *pResult, void *pUserData)
 	CGameContext *pSelf = (CGameContext *)pUserData;
 	if(!pSelf->m_pController->IsTeamplay())
 		return;
-	
+
 	pSelf->SendChat(-1, CGameContext::CHAT_ALL, "Teams were shuffled");
-	
+
 	pSelf->m_pController->ShuffleTeams();
 	(void)pSelf->m_pController->CheckTeamBalance();
 }
@@ -1938,9 +1938,7 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 	m_pConsole = Kernel()->RequestInterface<IConsole>();
 	m_World.SetGameServer(this);
 	m_Events.SetGameServer(this);
-	
-	AddServerCommand("stats", "show the stats of the current game", 0, CmdStats);
-	AddServerCommand("s", "show the stats of the current game", 0, CmdStats);
+
 	AddServerCommand("whisper", "whisper to a player in the server privately", "<playername> <text>", CmdWhisper);
 	AddServerCommand("w", "whisper to a player in the server privately", "<playername> <text>", CmdWhisper);
 	AddServerCommand("conversation", "whisper to the player, you whispered to last", "<text>", CmdConversation);
@@ -1971,13 +1969,17 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 		m_pController = new CGameControllerFNG24Teams(this);
 	else if (str_comp(m_Config->m_SvGametype, "zfng") == 0)
 		m_pController = new CGameControllerZFNG(this);
-	else 
+	else
 #define CONTEXT_INIT_WITHOUT_CONFIG
 #include "gamecontext_additional_gametypes.h"
 #undef CONTEXT_INIT_WITHOUT_CONFIG
 		m_pController = new CGameControllerFNG2(this);
-		
-	if(m_Config->m_SvEmoteWheel) m_pController->m_pGameType = "fng2+";
+
+	// Stats are not support on infection
+	if (!m_pController->IsInfection()) {
+		AddServerCommand("stats", "show the stats of the current game", 0, CmdStats);
+		AddServerCommand("s", "show the stats of the current game", 0, CmdStats);
+	}
 
 	// create all entities from the game layer
 	CMapItemLayerTilemap *pTileMap = m_Layers.GameLayer();
@@ -2016,14 +2018,14 @@ void CGameContext::OnInit(IKernel *pKernel, IMap* pMap, CConfiguration* pConfigF
 	IKernel *kernel = NULL;
 	if(pKernel != NULL) kernel = pKernel;
 	else kernel = Kernel();
-	
+
 	if(Kernel() == NULL) SetKernel(kernel);
-	
+
 	m_pServer = kernel->RequestInterface<IServer>();
 	m_pConsole = kernel->RequestInterface<IConsole>();
 	m_World.SetGameServer(this);
 	m_Events.SetGameServer(this);
-	
+
 	AddServerCommand("stats", "show the stats of the current game", 0, CmdStats);
 	AddServerCommand("s", "show the stats of the current game", 0, CmdStats);
 	AddServerCommand("whisper", "whisper to a player in the server privately", "<playername> <text>", CmdWhisper);
@@ -2043,7 +2045,7 @@ void CGameContext::OnInit(IKernel *pKernel, IMap* pMap, CConfiguration* pConfigF
 	m_Layers.Init(kernel, pMap);
 	m_Collision.Init(&m_Layers);
 
-	
+
 	CConfiguration* pConfig;
 	CConfiguration Config;
 	if(pConfigFile) {
@@ -2052,7 +2054,7 @@ void CGameContext::OnInit(IKernel *pKernel, IMap* pMap, CConfiguration* pConfigF
 	} else {
 		pConfig = &Config;
 	}
-	
+
 	if (str_comp(pConfig->m_SvGametype, "fng2") == 0)
 		m_pController = new CGameControllerFNG2(this, *pConfig);
 	else if (str_comp(pConfig->m_SvGametype, "fng2solo") == 0)
@@ -2065,12 +2067,12 @@ void CGameContext::OnInit(IKernel *pKernel, IMap* pMap, CConfiguration* pConfigF
 		m_pController = new CGameControllerFNG24Teams(this, *pConfig);
 	else if (str_comp(pConfig->m_SvGametype, "zfng") == 0)
 		m_pController = new CGameControllerZFNG(this, *pConfig);
-	else 
+	else
 #include "gamecontext_additional_gametypes.h"
 		m_pController = new CGameControllerFNG2(this, *pConfig);
 
 	if(m_Config->m_SvEmoteWheel) m_pController->m_pGameType = "fng2+";
-	
+
 	// create all entities from the game layer
 	CMapItemLayerTilemap *pTileMap = m_Layers.GameLayer();
 	CTile *pTiles = (CTile *)pMap->GetData(pTileMap->m_Data);
@@ -2133,7 +2135,7 @@ void CGameContext::OnSnap(int ClientID)
 
 		if(m_apPlayers[ClientID]->m_ClientVersion != CPlayer::CLIENT_VERSION_DDNET)
 			m_apPlayers[ClientID]->FakeSnap();
-		else 
+		else
 			m_apPlayers[ClientID]->FakeSnap(CPlayer::DDNET_CLIENT_MAX_CLIENTS - 1);
 	}
 	else if (ClientID == -1) {
@@ -2171,64 +2173,6 @@ void CGameContext::SendRoundStats() {
 	float bestAccuracy = 0;
 	QuadroMask bestKDPlayerIDs(0);
 	QuadroMask bestAccuarcyPlayerIDs(0);
-	
-	for (int i = 0; i < MAX_CLIENTS; ++i) {
-		CPlayer* p = m_apPlayers[i];
-		if (!p || p->GetTeam() == TEAM_SPECTATORS) continue;
-		SendChatTarget(i, "╔═════════ Statistics ═════════");
-		SendChatTarget(i, "║");
-
-		str_format(buff, 300, "║Kills(weapon): %d", p->m_Stats.m_Kills);
-		SendChatTarget(i, buff);
-		str_format(buff, 300, "║Hits(By opponent's weapon): %d", p->m_Stats.m_Hits);
-		SendChatTarget(i, buff);
-		SendChatTarget(i, "║");
-		str_format(buff, 300, "║Kills/Deaths: %4.2f", (p->m_Stats.m_Hits != 0) ? (float)((float)p->m_Stats.m_Kills / (float)p->m_Stats.m_Hits) : (float)p->m_Stats.m_Kills);
-		SendChatTarget(i, buff);		
-		str_format(buff, 300, "║Shots | Kills/Shots: %d | %3.1f%%\n", p->m_Stats.m_Shots, ((float)p->m_Stats.m_Kills / (float)(p->m_Stats.m_Shots == 0 ? 1: p->m_Stats.m_Shots)) * 100.f);
-		SendChatTarget(i, buff);
-		SendChatTarget(i, "║");
-		SendChatTarget(i, "╠══════════ Spikes ══════════");
-		SendChatTarget(i, "║");
-		str_format(buff, 300, "║Kills(normal spikes): %d", p->m_Stats.m_GrabsNormal);
-		SendChatTarget(i, buff);
-		str_format(buff, 300, "║Kills(team spikes): %d", p->m_Stats.m_GrabsTeam);
-		SendChatTarget(i, buff);
-		str_format(buff, 300, "║Kills(golden spikes): %d", p->m_Stats.m_GrabsGold);
-		SendChatTarget(i, buff);
-		str_format(buff, 300, "║Kills(false spikes): %d", p->m_Stats.m_GrabsFalse);
-		SendChatTarget(i, buff);
-		str_format(buff, 300, "║Spike deaths(while frozen): %d", p->m_Stats.m_Deaths);
-		SendChatTarget(i, buff);
-		SendChatTarget(i, "║");
-		SendChatTarget(i, "╠═══════════ Misc ══════════");
-		SendChatTarget(i, "║");
-		str_format(buff, 300, "║Teammates hammered/unfrozen: %d / %d", p->m_Stats.m_UnfreezingHammerHits, p->m_Stats.m_Unfreezes);
-		SendChatTarget(i, buff);
-		SendChatTarget(i, "║");
-		SendChatTarget(i, "╚══════════════════════════");
-		SendChatTarget(i, "Press F1 to view stats now!!");
-
-		float kd = ((p->m_Stats.m_Hits != 0) ? (float)((float)p->m_Stats.m_Kills / (float)p->m_Stats.m_Hits) : (float)p->m_Stats.m_Kills);
-		if (bestKD < kd) {
-			bestKD = kd;
-			bestKDPlayerIDs = 0;
-			bestKDPlayerIDs.SetBitOfPosition(i);
-		}
-		else if (bestKD == kd) {
-			bestKDPlayerIDs.SetBitOfPosition(i);
-		}
-
-		float accuracy = (float)p->m_Stats.m_Kills / (float)(p->m_Stats.m_Shots == 0 ? 1 : p->m_Stats.m_Shots);
-		if (bestAccuracy < accuracy) {
-			bestAccuracy = accuracy;
-			bestAccuarcyPlayerIDs = 0;
-			bestAccuarcyPlayerIDs.SetBitOfPosition(i);
-		}
-		else if (bestAccuracy == accuracy) {
-			bestAccuarcyPlayerIDs.SetBitOfPosition(i);
-		}
-	}
 
 	int bestKDCount = bestKDPlayerIDs.Count();
 	if (bestKDCount > 0) {
@@ -2239,24 +2183,24 @@ void CGameContext::SendRoundStats() {
 			//only allow upto 10 players at once(else we risk buffer overflow)
 			int curPlayerCount = 0;
 			int curPlayerIDOffset = -1;
-			
+
 			char PlayerNames[300];
-			
+
 			int CharacterOffset = 0;
 			while((curPlayerIDOffset = bestKDPlayerIDs.PositionOfNonZeroBit(curPlayerIDOffset + 1)) != -1){
-				if(curPlayerCount > 0){					
+				if(curPlayerCount > 0){
 					str_format((PlayerNames + CharacterOffset), 300 - CharacterOffset,  ", ");
 					CharacterOffset = str_length(PlayerNames);
 				}
 				str_format((PlayerNames + CharacterOffset), 300 - CharacterOffset, "%s", Server()->ClientName(curPlayerIDOffset));
 				CharacterOffset = str_length(PlayerNames);
 				++curPlayerCount;
-				
+
 				if(curPlayerCount > 10) break;
 			}
-			
+
 			if(curPlayerCount > 10) str_format((PlayerNames + CharacterOffset), 300 - CharacterOffset, " and others");
-			
+
 			str_format(buff, 300, "Best players: %s with a K/D of %.3f", PlayerNames, bestKD);
 		}
 		SendChat(-1, CGameContext::CHAT_ALL, buff);
@@ -2294,21 +2238,21 @@ void CGameContext::SendRoundStats() {
 		}
 		SendChat(-1, CGameContext::CHAT_ALL, buff);
 	}
-	
+
 	if(m_Config->m_SvTrivia) SendRandomTrivia();
 }
 
-void CGameContext::SendRandomTrivia(){	
+void CGameContext::SendRandomTrivia(){
 	srand (time(NULL));
 	int r = rand()%8;
-	
+
 	bool TriviaSent = false;
-	
+
 	//most jumps
 	if(r == 0){
 		int MaxJumps = 0;
 		int PlayerID = -1;
-		
+
 		for (int i = 0; i < MAX_CLIENTS; ++i) {
 			CPlayer* p = m_apPlayers[i];
 			if (!p || p->GetTeam() == TEAM_SPECTATORS) continue;
@@ -2317,7 +2261,7 @@ void CGameContext::SendRandomTrivia(){
 				PlayerID = i;
 			}
 		}
-		
+
 		if(PlayerID != -1){
 			char buff[300];
 			str_format(buff, sizeof(buff), "Trivia: %s jumped %d time%s in this round.", Server()->ClientName(PlayerID), MaxJumps, (MaxJumps == 1 ? "" : "s"));
@@ -2329,7 +2273,7 @@ void CGameContext::SendRandomTrivia(){
 	else if(r == 1){
 		float MaxTilesMoved = 0.f;
 		int PlayerID = -1;
-		
+
 		for (int i = 0; i < MAX_CLIENTS; ++i) {
 			CPlayer* p = m_apPlayers[i];
 			if (!p || p->GetTeam() == TEAM_SPECTATORS) continue;
@@ -2338,7 +2282,7 @@ void CGameContext::SendRandomTrivia(){
 				PlayerID = i;
 			}
 		}
-		
+
 		if(PlayerID != -1){
 			char buff[300];
 			str_format(buff, sizeof(buff), "Trivia: %s moved %5.2f tiles in this round.", Server()->ClientName(PlayerID), MaxTilesMoved/32.f);
@@ -2350,7 +2294,7 @@ void CGameContext::SendRandomTrivia(){
 	else if(r == 2){
 		int MaxHooks = 0;
 		int PlayerID = -1;
-		
+
 		for (int i = 0; i < MAX_CLIENTS; ++i) {
 			CPlayer* p = m_apPlayers[i];
 			if (!p || p->GetTeam() == TEAM_SPECTATORS) continue;
@@ -2359,7 +2303,7 @@ void CGameContext::SendRandomTrivia(){
 				PlayerID = i;
 			}
 		}
-		
+
 		if(PlayerID != -1){
 			char buff[300];
 			str_format(buff, sizeof(buff), "Trivia: %s hooked %d time%s in this round.", Server()->ClientName(PlayerID), MaxHooks, (MaxHooks == 1 ? "" : "s"));
@@ -2371,7 +2315,7 @@ void CGameContext::SendRandomTrivia(){
 	else if(r == 3){
 		float MaxSpeed = 0.f;
 		int PlayerID = -1;
-		
+
 		for (int i = 0; i < MAX_CLIENTS; ++i) {
 			CPlayer* p = m_apPlayers[i];
 			if (!p || p->GetTeam() == TEAM_SPECTATORS) continue;
@@ -2380,7 +2324,7 @@ void CGameContext::SendRandomTrivia(){
 				PlayerID = i;
 			}
 		}
-		
+
 		if(PlayerID != -1){
 			char buff[300];
 			str_format(buff, sizeof(buff), "Trivia: %s was the fastest player with %4.2f tiles per second(no fallspeed).", Server()->ClientName(PlayerID), (MaxSpeed*(float)Server()->TickSpeed())/32.f);
@@ -2392,7 +2336,7 @@ void CGameContext::SendRandomTrivia(){
 	else if(r == 4){
 		int MaxTeeCols = 0;
 		int PlayerID = -1;
-		
+
 		for (int i = 0; i < MAX_CLIENTS; ++i) {
 			CPlayer* p = m_apPlayers[i];
 			if (!p || p->GetTeam() == TEAM_SPECTATORS) continue;
@@ -2401,7 +2345,7 @@ void CGameContext::SendRandomTrivia(){
 				PlayerID = i;
 			}
 		}
-		
+
 		if(PlayerID != -1){
 			char buff[300];
 			str_format(buff, sizeof(buff), "Trivia: %s bounced %d time%s from other players.", Server()->ClientName(PlayerID), MaxTeeCols, (MaxTeeCols == 1 ? "" : "s"));
@@ -2413,7 +2357,7 @@ void CGameContext::SendRandomTrivia(){
 	else if(r == 5){
 		int MaxFreezeTicks = 0;
 		int PlayerID = -1;
-		
+
 		for (int i = 0; i < MAX_CLIENTS; ++i) {
 			CPlayer* p = m_apPlayers[i];
 			if (!p || p->GetTeam() == TEAM_SPECTATORS) continue;
@@ -2422,7 +2366,7 @@ void CGameContext::SendRandomTrivia(){
 				PlayerID = i;
 			}
 		}
-		
+
 		if(PlayerID != -1){
 			char buff[300];
 			str_format(buff, sizeof(buff), "Trivia: %s was frozen for %4.2f seconds total this round.", Server()->ClientName(PlayerID), (float)MaxFreezeTicks/(float)Server()->TickSpeed());
@@ -2434,7 +2378,7 @@ void CGameContext::SendRandomTrivia(){
 	else if(r == 6){
 		int MaxUnfreezeHammers = 0;
 		int PlayerID = -1;
-		
+
 		for (int i = 0; i < MAX_CLIENTS; ++i) {
 			CPlayer* p = m_apPlayers[i];
 			if (!p || p->GetTeam() == TEAM_SPECTATORS) continue;
@@ -2443,7 +2387,7 @@ void CGameContext::SendRandomTrivia(){
 				PlayerID = i;
 			}
 		}
-		
+
 		if(PlayerID != -1){
 			char buff[300];
 			str_format(buff, sizeof(buff), "Trivia: %s hammered %d frozen teammate%s.", Server()->ClientName(PlayerID), MaxUnfreezeHammers, (MaxUnfreezeHammers == 1 ? "" : "s"));
@@ -2455,7 +2399,7 @@ void CGameContext::SendRandomTrivia(){
 	else if(r == 7){
 		int MaxEmotes = 0;
 		int PlayerID = -1;
-		
+
 		for (int i = 0; i < MAX_CLIENTS; ++i) {
 			CPlayer* p = m_apPlayers[i];
 			if (!p || p->GetTeam() == TEAM_SPECTATORS) continue;
@@ -2464,7 +2408,7 @@ void CGameContext::SendRandomTrivia(){
 				PlayerID = i;
 			}
 		}
-		
+
 		if(PlayerID != -1){
 			char buff[300];
 			str_format(buff, sizeof(buff), "Trivia: %s emoted %d time%s.", Server()->ClientName(PlayerID), MaxEmotes, (MaxEmotes == 1 ? "" : "s"));
@@ -2476,7 +2420,7 @@ void CGameContext::SendRandomTrivia(){
 	else if(r == 8){
 		int MaxHit = 0;
 		int PlayerID = -1;
-		
+
 		for (int i = 0; i < MAX_CLIENTS; ++i) {
 			CPlayer* p = m_apPlayers[i];
 			if (!p || p->GetTeam() == TEAM_SPECTATORS) continue;
@@ -2485,7 +2429,7 @@ void CGameContext::SendRandomTrivia(){
 				PlayerID = i;
 			}
 		}
-		
+
 		if(PlayerID != -1){
 			char buff[300];
 			str_format(buff, sizeof(buff), "Trivia: %s was hitted %d time%s by the opponent's weapon.", Server()->ClientName(PlayerID), MaxHit, (MaxHit == 1 ? "" : "s"));
@@ -2497,7 +2441,7 @@ void CGameContext::SendRandomTrivia(){
 	else if(r == 9){
 		int MaxDeaths = 0;
 		int PlayerID = -1;
-		
+
 		for (int i = 0; i < MAX_CLIENTS; ++i) {
 			CPlayer* p = m_apPlayers[i];
 			if (!p || p->GetTeam() == TEAM_SPECTATORS) continue;
@@ -2506,7 +2450,7 @@ void CGameContext::SendRandomTrivia(){
 				PlayerID = i;
 			}
 		}
-		
+
 		if(PlayerID != -1){
 			char buff[300];
 			str_format(buff, sizeof(buff), "Trivia: %s was thrown %d time%s into spikes by the opponents, while being frozen.", Server()->ClientName(PlayerID), MaxDeaths, (MaxDeaths == 1 ? "" : "s"));
@@ -2518,7 +2462,7 @@ void CGameContext::SendRandomTrivia(){
 	else if(r == 10){
 		int MaxGold = 0;
 		int PlayerID = -1;
-		
+
 		for (int i = 0; i < MAX_CLIENTS; ++i) {
 			CPlayer* p = m_apPlayers[i];
 			if (!p || p->GetTeam() == TEAM_SPECTATORS) continue;
@@ -2527,7 +2471,7 @@ void CGameContext::SendRandomTrivia(){
 				PlayerID = i;
 			}
 		}
-		
+
 		if(PlayerID != -1){
 			char buff[300];
 			str_format(buff, sizeof(buff), "Trivia: %s threw %d time%s frozen opponents into golden spikes.", Server()->ClientName(PlayerID), MaxGold, (MaxGold == 1 ? "" : "s"));
@@ -2535,11 +2479,11 @@ void CGameContext::SendRandomTrivia(){
 			TriviaSent = true;
 		} else {
 			//send another trivia, bcs this is rare on maps without golden spikes
-			SendRandomTrivia();			
+			SendRandomTrivia();
 			TriviaSent = true;
 		}
 	}
-	
+
 	if(!TriviaSent){
 		SendChat(-1, CGameContext::CHAT_ALL, "Trivia: Press F1 and use PageUp and PageDown to scroll in the console window");
 	}
@@ -2600,7 +2544,7 @@ int CGameContext::SendPackMsg(CNetMsg_Sv_Chat *pMsg, int Flags)
 			pMsg->m_pMessage = msgbuf;
 		}
 		else pMsg->m_ClientID = id;
-		Server()->SendPackMsg(pMsg, Flags, i); 
+		Server()->SendPackMsg(pMsg, Flags, i);
 		pMsg->m_ClientID = originalID;
 		pMsg->m_pMessage = pOriginalText;
 	}
@@ -2639,7 +2583,7 @@ int CGameContext::SendPackMsg(CNetMsg_Sv_Chat *pMsg, int Flags, int ClientID)
 				str_format(msgbuf, sizeof(msgbuf), "%s: %s", Server()->ClientName(originalID), (pMsg->m_pMessage + (intptr_t)StrOffset));
 			else
 				str_format(msgbuf, sizeof(msgbuf), "%s", (pMsg->m_pMessage + (intptr_t)StrOffset));
-			
+
 			msgbuf[126] = 0;
 			pMsg->m_pMessage = msgbuf;
 			Server()->SendPackMsg(pMsg, Flags, ClientID);
