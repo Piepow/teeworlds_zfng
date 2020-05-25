@@ -106,6 +106,16 @@ void CGameControllerZFNG::Tick()
 		}
 	}
 
+	// Copied pause code from `gamecontroller`. I don't know why the code has
+	// to be like this, but it works
+
+	if (GameServer()->m_World.m_Paused && m_UnpauseTimer != 0)
+	{
+		--m_UnpauseTimer;
+		if (m_UnpauseTimer == 0)
+			GameServer()->m_World.m_Paused = false;
+	}
+
 	if (GameServer()->m_World.m_Paused)
 	{
 		++m_RoundStartTick;
@@ -117,12 +127,6 @@ void CGameControllerZFNG::Tick()
 				++m_InfectionStartTick;
 				break;
 		}
-
-		if (m_UnpauseTimer > 0)
-			--m_UnpauseTimer;
-
-		if (m_UnpauseTimer == 0)
-			GameServer()->m_World.m_Paused = false;
 
 		return;
 	}
