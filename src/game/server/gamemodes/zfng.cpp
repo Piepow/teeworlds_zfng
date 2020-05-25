@@ -854,7 +854,7 @@ void CGameControllerZFNG::SpawnFlag()
 void CGameControllerZFNG::AnnounceNuke()
 {
 	m_Broadcaster.SetBroadcast(
-		-1, "The nuke has spawned in the zombie base", TICK_SPEED * 1
+		-1, "The nuke has spawned in the zombie base", TICK_SPEED * 3
 	);
 	GameServer()->CreateSoundGlobal(SOUND_CTF_RETURN);
 }
