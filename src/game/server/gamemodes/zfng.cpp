@@ -77,9 +77,13 @@ void CGameControllerZFNG::SetGameState(EGameState GameState)
 				m_aFlagStandPositions[TEAM_HUMAN]
 			);
 			m_GameStateTimer = TIMER_INFINITE;
-			// TODO: Prevent players from spawning
 			break;
 		case IGS_FINISHING_OFF_ZOMBIES:
+			if (m_Nuke != NULL) {
+				delete m_Nuke;
+				m_Nuke = NULL;
+			}
+
 			FinishOffZombies();
 			m_GameStateTimer = TICK_SPEED * 2;
 			break;
@@ -115,10 +119,7 @@ void CGameControllerZFNG::Tick()
 	if (m_GameStateTimer > 0)
 		--m_GameStateTimer;
 
-	// `NumMinimumInfected` is the least number of tees that must be infected,
-	// which depends on the player count.
-	int NumHumans, NumInfected;
-	CountPlayers(NumHumans, NumInfected);
+	CountPlayers();
 
 	if (m_GameStateTimer == 0)
 	{
@@ -126,7 +127,7 @@ void CGameControllerZFNG::Tick()
 		switch (m_GameState)
 		{
 			case IGS_WAITING_FOR_INFECTION:
-				DoInitialInfections(NumHumans, NumInfected);
+				DoInitialInfections();
 				SetGameState(IGS_WAITING_FLAG);
 				break;
 			case IGS_WAITING_FLAG:
@@ -142,7 +143,7 @@ void CGameControllerZFNG::Tick()
 		{
 			case IGS_WAITING_FOR_PLAYERS:
 				{
-					if (NumHumans + NumInfected >= gs_MinPlayers) {
+					if (m_NumHumans + m_NumInfected >= gs_MinPlayers) {
 						SetGameState(IGS_WAITING_FOR_INFECTION);
 					} else {
 						// Do broadcasts
@@ -191,6 +192,7 @@ void CGameControllerZFNG::Tick()
 	switch (m_GameState) {
 		case IGS_WAITING_FLAG:
 		case IGS_NORMAL:
+		case IGS_NUKE_DETONATED:
 			DoWincheck();
 			break;
 	}
@@ -448,51 +450,36 @@ void CGameControllerZFNG::DoInactivePlayers()
 
 void CGameControllerZFNG::DoWincheck()
 {
-	if(m_GameOverTick == -1 && !m_Warmup && !GameServer()->m_World.m_ResetRequested)
-	{
-		if(IsTeamplay())
-		{
-			// check score win condition
-			if((m_Config.m_SvScorelimit > 0 && (m_aTeamscore[TEAM_RED] >= m_Config.m_SvScorelimit || m_aTeamscore[TEAM_BLUE] >= m_Config.m_SvScorelimit)) ||
-				(m_Config.m_SvTimelimit > 0 && (Server()->Tick()-m_RoundStartTick) >= m_Config.m_SvTimelimit*Server()->TickSpeed()*60))
-			{
-				if(m_Config.m_SvTournamentMode){
-				} else {
-					if(m_aTeamscore[TEAM_RED] != m_aTeamscore[TEAM_BLUE])
-						EndRound();
-					else
-						m_SuddenDeath = 1;
-				}
-			}
+	if (m_GameOverTick == -1 &&
+		!GameServer()->m_World.m_ResetRequested
+	) {
+		if (m_NumHumans == 0) {
+			// Zombies win
+			dbg_msg("zfng", "Humans win");
+			EndRound();
+			return;
+		} else if (m_NumInfected == 0) {
+			// Humans win
+			dbg_msg("zfng", "Humans win");
+			SetGameState(IGS_FINISHING_OFF_ZOMBIES);
+			return;
 		}
-		else
-		{
-			// gather some stats
-			int Topscore = 0;
-			int TopscoreCount = 0;
-			for(int i = 0; i < MAX_CLIENTS; i++)
-			{
-				if(GameServer()->m_apPlayers[i])
-				{
-					if(GameServer()->m_apPlayers[i]->m_Score > Topscore)
-					{
-						Topscore = GameServer()->m_apPlayers[i]->m_Score;
-						TopscoreCount = 1;
-					}
-					else if(GameServer()->m_apPlayers[i]->m_Score == Topscore)
-						TopscoreCount++;
-				}
-			}
 
-			// check score win condition
-			if((m_Config.m_SvScorelimit > 0 && Topscore >= m_Config.m_SvScorelimit) ||
-				(m_Config.m_SvTimelimit > 0 && (Server()->Tick()-m_RoundStartTick) >= m_Config.m_SvTimelimit*Server()->TickSpeed()*60))
-			{
-				if(TopscoreCount == 1)
-					EndRound();
-				else
-					m_SuddenDeath = 1;
-			}
+		bool ScoreLimitMet =
+			m_Config.m_SvScorelimit > 0 && (
+				m_aTeamscore[TEAM_RED] >= m_Config.m_SvScorelimit ||
+				m_aTeamscore[TEAM_BLUE] >= m_Config.m_SvScorelimit
+			);
+
+		bool TimeLimitMet =
+			m_Config.m_SvTimelimit > 0 &&
+			(TICK - m_RoundStartTick) >= m_Config.m_SvTimelimit * TICK_SPEED * 60;
+
+		if (ScoreLimitMet || TimeLimitMet) {
+			if (m_aTeamscore[TEAM_RED] != m_aTeamscore[TEAM_BLUE])
+				EndRound();
+			else
+				m_SuddenDeath = 1;
 		}
 	}
 }
@@ -701,7 +688,7 @@ bool CGameControllerZFNG::CanChangeTeam(CPlayer *pPlayer, int JoinTeam)
 	}
 }
 
-bool CGameControllerZFNG::CanSpawn(int Team, vec2* pOutPos)
+bool CGameControllerZFNG::CanSpawn()
 {
 	switch (m_GameState) {
 		case IGS_NUKE_DETONATED:
@@ -709,36 +696,42 @@ bool CGameControllerZFNG::CanSpawn(int Team, vec2* pOutPos)
 		case IGS_ROUND_ENDED:
 			return false;
 		default:
-			return IGameController::CanSpawn(Team, pOutPos);
+			return true;
 	}
 }
 
-void CGameControllerZFNG::CountPlayers(int& NumHumans, int& NumInfected) {
-	// Set them to zero
-	NumHumans = 0;
-	NumInfected = 0;
+bool CGameControllerZFNG::CanSpawn(int Team, vec2* pOutPos)
+{
+	return CanSpawn() && IGameController::CanSpawn(Team, pOutPos);
+}
+
+void CGameControllerZFNG::CountPlayers() {
+	m_NumHumans = 0;
+	m_NumInfected = 0;
 
 	// Loop through and increment them
 	for (int i = 0; i < MAX_CLIENTS; i++)
 	{
 		// Check that the player is able to play (not spectating)
 		if (GameServer()->IsClientPlayer(i)) {
-			if (GameServer()->m_apPlayers[i]->IsInfected())
-				NumInfected++;
-			else
-				NumHumans++;
+			// Don't count players that are dead and can't spawn
+			CCharacter* pCharacter = GameServer()->GetPlayerChar(i);
+			bool isAlive = pCharacter && pCharacter->IsAlive();
+			if (CanSpawn() || isAlive) {
+				if (GameServer()->m_apPlayers[i]->IsInfected())
+					m_NumInfected++;
+				else
+					m_NumHumans++;
+			}
 		}
 	}
 
 }
 
-int CGameControllerZFNG::CalcMinimumInfected(
-	int NumHumans,
-	int NumInfected
-) {
-	if (NumHumans + NumInfected <= 1)
+int CGameControllerZFNG::CalcMinimumInfected() {
+	if (m_NumHumans + m_NumInfected <= 1)
 		return 0;
-	else if (NumHumans + NumInfected <= 3)
+	else if (m_NumHumans + m_NumInfected <= 3)
 		return 1;
 	else
 		return 2;
@@ -793,13 +786,10 @@ void CGameControllerZFNG::FinishOffZombies()
 	}
 }
 
-void CGameControllerZFNG::DoInitialInfections(
-	int NumHumans,
-	int NumInfected
-) {
-	int NumMinimumInfected = CalcMinimumInfected(NumHumans, NumInfected);
-	if (NumInfected < NumMinimumInfected) {
-		int NumToInfect = NumMinimumInfected - NumInfected;
+void CGameControllerZFNG::DoInitialInfections() {
+	int NumMinimumInfected = CalcMinimumInfected();
+	if (m_NumInfected < NumMinimumInfected) {
+		int NumToInfect = NumMinimumInfected - m_NumInfected;
 		while (NumToInfect > 0)
 		{
 			// Guilty until proven innocent
@@ -820,17 +810,16 @@ void CGameControllerZFNG::DoInitialInfections(
 
 					GameServer()->m_apPlayers[i]->Infect(true, false);
 
-					// remember infection because it was picked
-					// by the server (remember bad luck)
+					// Remember infection because it was picked by the server
+					// (we remember their bad luck)
 					Server()->RememberInfection(i);
 
-					// update counters
+					// Update counters
 					NumToInfect--;
-					// not that we need these below
-					NumHumans--;
-					NumInfected++;
+					m_NumHumans--;
+					m_NumInfected++;
 
-					// check if quota is met
+					// Check if quota is met
 					if (NumToInfect == 0)
 						break;
 				}

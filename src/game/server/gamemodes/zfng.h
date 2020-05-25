@@ -52,15 +52,18 @@ protected:
 	virtual bool IsInfectionStarted();
 	virtual int GetAutoTeam(int NotThisID);
 	virtual bool CanChangeTeam(CPlayer* pPlayer, int JoinTeam);
+	bool CanSpawn();
 	virtual bool CanSpawn(int Team, vec2* pOutPos);
 private:
 	CBroadcaster m_Broadcaster;
 
-	void CountPlayers(int& NumHumans, int& NumInfected);
+	void CountPlayers();
+	int m_NumHumans; // Cache for performance
+	int m_NumInfected; // Cache for performance
 
 	// Calculate how many tees to infect at the start of a round, which depends
 	// on number of players
-	int CalcMinimumInfected(int NumHumans, int NumInfected);
+	int CalcMinimumInfected();
 
 	vec2 m_aFlagStandPositions[2];
 	class CFlagStand* m_apFlagStands[2];
@@ -76,7 +79,7 @@ private:
 	void DoFlagCapture();
 	void SpawnFlagStand(int Team);
 	void FinishOffZombies();
-	void DoInitialInfections(int NumHumans, int NumInfected);
+	void DoInitialInfections();
 	void UninfectAll();
 
 	CNuke* m_Nuke;
