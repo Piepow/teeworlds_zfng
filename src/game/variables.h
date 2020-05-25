@@ -69,6 +69,11 @@ MACRO_CONFIG_INT(SvTimelimit, sv_timelimit, 0, 0, 1000, CFGFLAG_SERVER, "Time li
 MACRO_CONFIG_STR(SvGametype, sv_gametype, 32, "zfng", CFGFLAG_SERVER, "Game type (zfng, fng2, fng2solo, fng2boom, fng2boomsolo, fng24teams)")
 MACRO_CONFIG_INT(SvTournamentMode, sv_tournament_mode, 0, 0, 1, CFGFLAG_SERVER, "Tournament mode. When enabled, players joins the server as spectator")
 MACRO_CONFIG_INT(SvSpamprotection, sv_spamprotection, 1, 0, 1, CFGFLAG_SERVER, "Spam protection")
+MACRO_CONFIG_INT(SvDelayBetweenRounds, sv_delay_between_rounds, 5, 0, 1000, CFGFLAG_SERVER, "Delay in seconds between rounds")
+
+MACRO_CONFIG_INT(SvZFNGMinPlayers, sv_zfng_min_players, 2, 2, 1000, CFGFLAG_SERVER, "Minimum number of players needed to start a round of zfng")
+MACRO_CONFIG_INT(SvZFNGInfectionDelay, sv_zfng_infection_delay, 5, 0, 1000, CFGFLAG_SERVER, "Delay in seconds before infection begins")
+MACRO_CONFIG_INT(SvZFNGFlagDelay, sv_zfng_flag_delay, 120, 0, 1000, CFGFLAG_SERVER, "Delay in seconds before flag appears")
 
 MACRO_CONFIG_INT(SvRespawnDelayTDM, sv_respawn_delay_tdm, 3, 0, 10, CFGFLAG_SERVER, "Time needed to respawn after death in tdm gametype")
 

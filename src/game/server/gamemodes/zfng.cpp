@@ -13,8 +13,6 @@
 #define TICK_SPEED Server()->TickSpeed()
 #define TICK Server()->Tick()
 
-static const int gs_MinPlayers = 2;
-
 CGameControllerZFNG::CGameControllerZFNG(class CGameContext *pGameServer) :
 	IGameController((class CGameContext*)pGameServer),
 	m_Broadcaster(pGameServer)
@@ -61,11 +59,11 @@ void CGameControllerZFNG::SetGameState(EGameState GameState)
 			m_GameStateTimer = TIMER_INFINITE;
 			break;
 		case IGS_WAITING_FOR_INFECTION:
-			m_GameStateTimer = TICK_SPEED * 2;
+			m_GameStateTimer = TICK_SPEED * m_Config.m_SvZFNGInfectionDelay;
 			IGameController::StartRound();
 			break;
 		case IGS_WAITING_FLAG:
-			m_GameStateTimer = TICK_SPEED * 2;
+			m_GameStateTimer = TICK_SPEED * m_Config.m_SvZFNGFlagDelay;
 			break;
 		case IGS_NORMAL:
 			SpawnFlag();
@@ -98,7 +96,7 @@ void CGameControllerZFNG::SetGameState(EGameState GameState)
 void CGameControllerZFNG::Tick()
 {
 	if (m_GameOverTick != -1) {
-		if (Server()->Tick() > m_GameOverTick + TICK_SPEED * 10) {
+		if (TICK > m_GameOverTick + TICK_SPEED * m_Config.m_SvDelayBetweenRounds) {
 			CycleMap();
 			StartRound();
 			m_RoundCount++;
@@ -143,7 +141,7 @@ void CGameControllerZFNG::Tick()
 		{
 			case IGS_WAITING_FOR_PLAYERS:
 				{
-					if (m_NumHumans + m_NumInfected >= gs_MinPlayers) {
+					if (m_NumHumans + m_NumInfected >= m_Config.m_SvZFNGMinPlayers) {
 						SetGameState(IGS_WAITING_FOR_INFECTION);
 					} else {
 						// Do broadcasts
@@ -159,10 +157,12 @@ void CGameControllerZFNG::Tick()
 			case IGS_WAITING_FOR_INFECTION:
 				{
 					char aBuf[64];
+					int Seconds =
+						m_Config.m_SvZFNGInfectionDelay -
+						((TICK - m_RoundStartTick) / TICK_SPEED);
 					str_format(
 						aBuf, sizeof aBuf,
-						"Starting infection in %d seconds",
-						5 - ((TICK - m_RoundStartTick) / TICK_SPEED)
+						"Starting infection in %d seconds", Seconds
 					);
 					m_Broadcaster.SetBroadcast(-1, aBuf, 10);
 					break;
@@ -309,7 +309,7 @@ void CGameControllerZFNG::TakeFlag(CCharacter* pCharacter)
 	if (m_pFlag->m_AtStand)
 	{
 		m_aTeamscore[TEAM_HUMAN]++;
-		m_pFlag->m_GrabTick = Server()->Tick();
+		m_pFlag->m_GrabTick = TICK;
 	}
 
 	m_pFlag->m_AtStand = 0;
@@ -413,7 +413,7 @@ void CGameControllerZFNG::DoInactivePlayers()
 		{
 			if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS && !Server()->IsAuthed(i))
 			{
-				if(Server()->Tick() > GameServer()->m_apPlayers[i]->m_LastActionTick+m_Config.m_SvInactiveKickTime*Server()->TickSpeed()*60)
+				if(TICK > GameServer()->m_apPlayers[i]->m_LastActionTick+m_Config.m_SvInactiveKickTime*TICK_SPEED*60)
 				{
 					switch(m_Config.m_SvInactiveKick)
 					{
@@ -624,7 +624,7 @@ int CGameControllerZFNG::DropFlagMaybe(
 		if (m_pFlag && m_pFlag->m_pCarryingCharacter == pVictim)
 		{
 			GameServer()->CreateSoundGlobal(SOUND_CTF_DROP);
-			m_pFlag->m_DropTick = Server()->Tick();
+			m_pFlag->m_DropTick = TICK;
 			m_pFlag->m_pCarryingCharacter = 0;
 			m_pFlag->m_Vel = vec2(0,0);
 

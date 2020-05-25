@@ -47,7 +47,7 @@ void CGameControllerFNG2Boom::Tick()
 	if(m_GameOverTick != -1)
 	{
 		// game over.. wait for restart
-		if(Server()->Tick() > m_GameOverTick+Server()->TickSpeed()*10)
+		if(Server()->Tick() > m_GameOverTick+Server()->TickSpeed()*m_Config.m_SvDelayBetweenRounds)
 		{
 			if(m_Config.m_SvTournamentMode){
 			} else {
