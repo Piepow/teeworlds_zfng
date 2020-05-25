@@ -79,11 +79,13 @@ private:
 	void DoFlagCapture();
 	void SpawnFlagStand(int Team);
 
+	int m_InfectionStartTick;
 	void FinishOffZombies();
 	void DoInitialInfections();
 	void UninfectAll();
 
 	void AnnounceWinners();
+	void AnnounceNuke();
 
 	CNuke* m_Nuke;
 };

@@ -63,10 +63,11 @@ void CGameControllerZFNG::SetGameState(EGameState GameState)
 			IGameController::StartRound();
 			break;
 		case IGS_WAITING_FLAG:
-			m_GameStateTimer = TICK_SPEED * m_Config.m_SvZFNGFlagDelay;
+			m_GameStateTimer = TICK_SPEED * m_Config.m_SvZFNGNukeDelay;
 			break;
 		case IGS_NORMAL:
 			SpawnFlag();
+			AnnounceNuke();
 			m_GameStateTimer = TIMER_INFINITE;
 			break;
 		case IGS_NUKE_DETONATED:
@@ -105,12 +106,24 @@ void CGameControllerZFNG::Tick()
 		}
 	}
 
-	if (GameServer()->m_World.m_Paused && m_UnpauseTimer)
+	if (GameServer()->m_World.m_Paused)
 	{
 		++m_RoundStartTick;
-		--m_UnpauseTimer;
-		if (!m_UnpauseTimer)
+
+		switch (m_GameState) {
+			case IGS_WAITING_FLAG:
+			case IGS_NORMAL:
+			case IGS_FINISHING_OFF_ZOMBIES:
+				++m_InfectionStartTick;
+				break;
+		}
+
+		if (m_UnpauseTimer > 0)
+			--m_UnpauseTimer;
+
+		if (m_UnpauseTimer == 0)
 			GameServer()->m_World.m_Paused = false;
+
 		return;
 	}
 
@@ -126,6 +139,7 @@ void CGameControllerZFNG::Tick()
 		{
 			case IGS_WAITING_FOR_INFECTION:
 				DoInitialInfections();
+				m_InfectionStartTick = TICK;
 				SetGameState(IGS_WAITING_FLAG);
 				break;
 			case IGS_WAITING_FLAG:
@@ -156,20 +170,83 @@ void CGameControllerZFNG::Tick()
 				}
 			case IGS_WAITING_FOR_INFECTION:
 				{
-					char aBuf[64];
 					int Seconds =
 						m_Config.m_SvZFNGInfectionDelay -
 						((TICK - m_RoundStartTick) / TICK_SPEED);
-					str_format(
-						aBuf, sizeof aBuf,
-						"Starting infection in %d seconds", Seconds
-					);
-					m_Broadcaster.SetBroadcast(-1, aBuf, 10);
+
+					if (Seconds == 1) {
+						m_Broadcaster.SetBroadcast(
+							-1, "Starting infection in 1 second", TICK_SPEED * 1
+						);
+					} else {
+						char aBuf[64];
+						str_format(
+							aBuf, sizeof aBuf,
+							"Starting infection in %d seconds", Seconds
+						);
+						m_Broadcaster.SetBroadcast(-1, aBuf, TICK_SPEED * 1);
+					}
 					break;
 				}
 			case IGS_WAITING_FLAG:
 				{
-					// TODO: Broadcast time for flag to appear
+					// Broadcast time for nuke to appear
+
+					int Seconds =
+						m_Config.m_SvZFNGNukeDelay -
+						((TICK - m_InfectionStartTick) / TICK_SPEED);
+
+					int Minutes = Seconds / 60;
+
+					if (Minutes > 0 && Seconds % 60 == 0) {
+						switch (Minutes) {
+							case 10:
+							case 5:
+							case 4:
+							case 3:
+							case 2:
+								char aBuf[64];
+								str_format(
+									aBuf, sizeof aBuf,
+									"Nuke spawns in %d minutes", Minutes
+								);
+								m_Broadcaster.SetBroadcast(
+									-1, aBuf, TICK_SPEED * 1
+								);
+								break;
+							case 1:
+								m_Broadcaster.SetBroadcast(
+									-1, "Nuke spawns in 1 minute", TICK_SPEED * 1
+								);
+								break;
+						}
+					} else {
+						switch (Seconds) {
+							case 30:
+							case 10:
+							case 5:
+							case 4:
+							case 3:
+							case 2:
+								char aBuf[64];
+								str_format(
+									aBuf, sizeof aBuf,
+									"Nuke spawns in %d seconds", Seconds
+								);
+								m_Broadcaster.SetBroadcast(
+									-1, aBuf, TICK_SPEED * 1
+								);
+								break;
+							case 1:
+								m_Broadcaster.SetBroadcast(
+									-1,
+									"Nuke spawns in 1 second",
+									TICK_SPEED * 1
+								);
+								break;
+						}
+					}
+
 					break;
 				}
 			case IGS_NORMAL:
@@ -768,6 +845,14 @@ void CGameControllerZFNG::SpawnFlag()
 		m_pFlag->m_Pos = StandPos;
 		GameServer()->m_World.InsertEntity(m_pFlag);
 	}
+}
+
+void CGameControllerZFNG::AnnounceNuke()
+{
+	m_Broadcaster.SetBroadcast(
+		-1, "The nuke has spawned in the zombie base", TICK_SPEED * 1
+	);
+	GameServer()->CreateSoundGlobal(SOUND_CTF_RETURN);
 }
 
 void CGameControllerZFNG::RemoveFlag()
