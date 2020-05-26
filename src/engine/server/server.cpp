@@ -1660,7 +1660,27 @@ int CServer::LoadMap(const char *pMapName)
 		io_read(File, m_pCurrentMapData, m_CurrentMapSize);
 		io_close(File);
 	}
+
+	ExecuteMapConfig(pMapName);
+
 	return 1;
+}
+
+void CServer::ExecuteMapConfig(const char* pMapName)
+{
+	char aBuf[512];
+	str_format(aBuf, sizeof(aBuf), "map_cfgs/%s.cfg", pMapName);
+
+	IOHANDLE File = Storage()->OpenFile(
+		aBuf,
+		IOFLAG_READ,
+		IStorage::TYPE_ALL
+	);
+
+	if (File != NULL) {
+		io_close(File);
+		m_pConsole->ExecuteFile(aBuf);
+	}
 }
 
 IMap* CServer::LoadAndGetMap(const char *pMapName, unsigned int pGameID)

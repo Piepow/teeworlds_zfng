@@ -241,6 +241,7 @@ public:
 
 	char *GetMapName();
 	int LoadMap(const char *pMapName);
+	void ExecuteMapConfig(const char* pMapName);
 	class IMap* LoadAndGetMap(const char *pMapName, unsigned int pGameID);
 	bool ChangeMap(const char *pMapName, unsigned int pGameID);
 
