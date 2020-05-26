@@ -20,6 +20,7 @@ CGameControllerZFNG::CGameControllerZFNG(class CGameContext *pGameServer) :
 	m_pGameType = "zfng";
 	m_GameFlags = GAMEFLAG_FLAGS;
 	m_Nuke = NULL;
+	m_pFlag = NULL;
 	SetGameState(IGS_WAITING_FOR_PLAYERS);
 }
 
@@ -33,6 +34,7 @@ CGameControllerZFNG::CGameControllerZFNG(
 	m_pGameType = "zfng";
 	m_GameFlags = GAMEFLAG_FLAGS;
 	m_Nuke = NULL;
+	m_pFlag = NULL;
 	SetGameState(IGS_WAITING_FOR_PLAYERS);
 }
 
@@ -860,10 +862,10 @@ void CGameControllerZFNG::AnnounceNuke()
 
 void CGameControllerZFNG::RemoveFlag()
 {
-	if (m_pFlag != NULL)
+	if (m_pFlag != NULL) {
 		GameServer()->m_World.DestroyEntity(m_pFlag);
-
-	m_pFlag = NULL;
+		m_pFlag = NULL;
+	}
 }
 
 void CGameControllerZFNG::RemoveNuke()
