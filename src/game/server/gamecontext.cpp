@@ -1135,6 +1135,11 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			if((pPlayer->GetCharacter() && pPlayer->GetCharacter()->IsFrozen()) || (pPlayer->m_LastKill && pPlayer->m_LastKill+Server()->TickSpeed()*m_Config->m_SvKillDelay > Server()->Tick()) || m_Config->m_SvKillDelay == -1)
 				return;
 
+			if (m_pController->IsInfection() && !pPlayer->IsInfected()) {
+				SendChatTarget(ClientID, "Suicide is not allowed");
+				return;
+			}
+
 			pPlayer->m_LastKill = Server()->Tick();
 			pPlayer->KillCharacter(WEAPON_SELF);
 		}
