@@ -820,7 +820,6 @@ void CCharacter::DieSpikes(int pPlayerID, int spikes_flag) {
 				}
 
 				GameServer()->CreateSound(m_Pos, SOUND_NINJA_HIT);
-				GameServer()->CreateSound(m_Pos, SOUND_TEE_CRY);
 			}
 
 			if (GameServer()->m_pController->IsInfection())
