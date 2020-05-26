@@ -385,10 +385,7 @@ void CGameControllerZFNG::ReturnFlag(CCharacter* pCharacter)
 void CGameControllerZFNG::TakeFlag(CCharacter* pCharacter)
 {
 	if (m_pFlag->m_AtStand)
-	{
-		m_aTeamscore[TEAM_HUMAN]++;
 		m_pFlag->m_GrabTick = TICK;
-	}
 
 	m_pFlag->m_AtStand = 0;
 	m_pFlag->m_pCarryingCharacter = pCharacter;
