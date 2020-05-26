@@ -52,6 +52,7 @@ protected:
 	virtual bool IsInfectionStarted();
 	virtual int GetAutoTeam(int NotThisID);
 	virtual bool CanChangeTeam(CPlayer* pPlayer, int JoinTeam);
+	virtual bool CheckTeamBalance();
 	bool CanSpawn();
 	virtual bool CanSpawn(int Team, vec2* pOutPos);
 private:
@@ -86,6 +87,7 @@ private:
 
 	void AnnounceWinners();
 	void AnnounceNuke();
+	void RemoveNuke();
 
 	CNuke* m_Nuke;
 };

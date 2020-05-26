@@ -19,6 +19,7 @@ CGameControllerZFNG::CGameControllerZFNG(class CGameContext *pGameServer) :
 {
 	m_pGameType = "zfng";
 	m_GameFlags = GAMEFLAG_FLAGS;
+	m_Nuke = NULL;
 	SetGameState(IGS_WAITING_FOR_PLAYERS);
 }
 
@@ -31,6 +32,7 @@ CGameControllerZFNG::CGameControllerZFNG(
 {
 	m_pGameType = "zfng";
 	m_GameFlags = GAMEFLAG_FLAGS;
+	m_Nuke = NULL;
 	SetGameState(IGS_WAITING_FOR_PLAYERS);
 }
 
@@ -78,11 +80,7 @@ void CGameControllerZFNG::SetGameState(EGameState GameState)
 			m_GameStateTimer = TIMER_INFINITE;
 			break;
 		case IGS_FINISHING_OFF_ZOMBIES:
-			if (m_Nuke != NULL) {
-				delete m_Nuke;
-				m_Nuke = NULL;
-			}
-
+			RemoveNuke();
 			FinishOffZombies();
 			m_GameStateTimer = TICK_SPEED * 2;
 			break;
@@ -259,8 +257,7 @@ void CGameControllerZFNG::Tick()
 				break;
 			case IGS_NUKE_DETONATED:
 				if (m_Nuke->Update()) {
-					delete m_Nuke;
-					m_Nuke = NULL;
+					RemoveNuke();
 					SetGameState(IGS_FINISHING_OFF_ZOMBIES);
 				}
 				break;
@@ -736,6 +733,7 @@ void CGameControllerZFNG::StartRound()
 	IGameController::StartRound();
 	UninfectAll();
 	RemoveFlag();
+	RemoveNuke();
 	SetGameState(IGS_WAITING_FOR_PLAYERS);
 }
 
@@ -793,6 +791,11 @@ bool CGameControllerZFNG::CanChangeTeam(CPlayer *pPlayer, int JoinTeam)
 	} else {
 		return true;
 	}
+}
+
+bool CGameControllerZFNG::CheckTeamBalance()
+{
+	return true;
 }
 
 bool CGameControllerZFNG::CanSpawn()
@@ -864,6 +867,14 @@ void CGameControllerZFNG::RemoveFlag()
 		GameServer()->m_World.DestroyEntity(m_pFlag);
 
 	m_pFlag = NULL;
+}
+
+void CGameControllerZFNG::RemoveNuke()
+{
+	if (m_Nuke != NULL) {
+		delete m_Nuke;
+		m_Nuke = NULL;
+	}
 }
 
 void CGameControllerZFNG::SpawnFlagStand(int Team)
