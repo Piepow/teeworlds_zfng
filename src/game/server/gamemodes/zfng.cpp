@@ -638,7 +638,6 @@ int CGameControllerZFNG::OnCharacterDeath(
 					pKiller->m_Score++; // Froze flag carrier
 				}
 			}
-
 		} else if (Weapon == WEAPON_SPIKE_NORMAL) {
 			pVictim->GetPlayer()->m_RespawnTick = TICK + TICK_SPEED * 0.5f;
 			pKiller->m_Score += m_Config.m_SvPlayerScoreSpikeNormal;

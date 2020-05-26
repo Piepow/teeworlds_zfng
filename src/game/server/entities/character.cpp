@@ -734,8 +734,8 @@ bool CCharacter::IncreaseArmor(int Amount)
 
 void CCharacter::Die(int Killer, int Weapon)
 {
-	// we got to wait 0.5 secs before respawning
-	m_pPlayer->m_RespawnTick = Server()->Tick() + Server()->TickSpeed() / 2;
+	// we got to wait 0.75 secs before respawning
+	m_pPlayer->m_RespawnTick = Server()->Tick() + Server()->TickSpeed() * 0.75;
 	int ModeSpecial = GameServer()->m_pController->OnCharacterDeath(this, GameServer()->m_apPlayers[Killer], Weapon);
 
 	char aBuf[256];
