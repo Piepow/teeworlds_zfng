@@ -961,7 +961,9 @@ void CGameControllerZFNG::UninfectAll()
 		CPlayer* player = GameServer()->m_apPlayers[i];
 		if (player != NULL) {
 			player->m_HumanTime = 0;
-			player->Revive(false, false);
+			if (player->IsInfected()) {
+				player->Revive(false, false);
+			}
 		}
 	}
 }
