@@ -3,13 +3,12 @@
 #define TICK_SPEED m_pGameServer->Server()->TickSpeed()
 #define TICK m_pGameServer->Server()->Tick()
 
-static const int gs_MaxRadius = 30 * 32; // Units: px
-
 CNuke::CNuke(class CGameContext* pGameServer, vec2 Center) :
 	m_pGameServer(pGameServer),
 	m_Center(Center)
 {
 	m_Radius = 0.0f;
+	m_ExplosionSpeed = 4.0f;
 	CalcNumExplosions();
 	DoEmotes();
 }
@@ -36,7 +35,18 @@ void CNuke::DoEmotes()
 
 bool CNuke::Update()
 {
-	if (m_Radius > gs_MaxRadius) return true;
+	// The nuke it blows up the entire map
+
+	float Left = m_Center.x - m_Radius;
+	float Right = m_Center.x + m_Radius;
+	float Top = m_Center.y - m_Radius;
+	float Bottom = m_Center.y + m_Radius;
+
+	if (round_to_int(Left) / 32 < 0 &&
+		round_to_int(Right) / 32 > m_pGameServer->Collision()->GetWidth() &&
+		round_to_int(Top) / 32 < 0 &&
+		round_to_int(Bottom) / 32 > m_pGameServer->Collision()->GetHeight())
+	{ return true; }
 
 	if (frandom() < 0.75f) {
 		for (int i = 0; i < m_NumExplosions; i++)
@@ -47,7 +57,33 @@ bool CNuke::Update()
 				m_Center +
 				vec2(m_Radius * cos(Angle), m_Radius * sin(Angle));
 
-			if (!m_pGameServer->Collision()->CheckPoint(ExplosionPos)) {
+			if (round_to_int(ExplosionPos.x) / 32 < 0 ||
+				round_to_int(ExplosionPos.x) / 32 > m_pGameServer->Collision()->GetWidth() ||
+				round_to_int(ExplosionPos.y) / 32 < 0 ||
+				round_to_int(ExplosionPos.y) / 32 > m_pGameServer->Collision()->GetHeight())
+			{ continue; }
+
+			// Only create explosions in empty tiles
+
+			int ExplosionCollision = m_pGameServer->Collision()->GetCollisionAt(
+				ExplosionPos.x,
+				ExplosionPos.y
+			);
+
+			int Collision =
+				ExplosionCollision &
+				(
+					CCollision::COLFLAG_SOLID |
+					CCollision::COLFLAG_DEATH |
+					CCollision::COLFLAG_SPIKE_NORMAL |
+					CCollision::COLFLAG_SPIKE_RED |
+					CCollision::COLFLAG_SPIKE_BLUE |
+					CCollision::COLFLAG_SPIKE_GOLD |
+					CCollision::COLFLAG_SPIKE_GREEN |
+					CCollision::COLFLAG_SPIKE_PURPLE
+				);
+
+			if (Collision == 0) {
 				m_pGameServer->CreateExplosion(
 					ExplosionPos, -1, WEAPON_GAME, true
 				);
@@ -63,7 +99,8 @@ bool CNuke::Update()
 		}
 	}
 
-	m_Radius += 8;
+	m_ExplosionSpeed += 1.0f;
+	m_Radius += m_ExplosionSpeed;
 	CalcNumExplosions();
 
 	DoDeaths();

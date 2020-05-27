@@ -14,6 +14,7 @@ private:
 	class CGameContext* m_pGameServer;
 	vec2 m_Center;
 	float m_Radius;
+	float m_ExplosionSpeed;
 	int m_ExplosionTimer;
 	int m_NumExplosions; // Cache for performance
 	void CalcNumExplosions();
