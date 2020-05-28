@@ -644,6 +644,10 @@ int IGameController::GetAutoTeam(int NotThisID)
 	if(m_Config.m_DbgStress)
 		return 0;
 
+	if (Server()->WasClientSpectating(NotThisID)) {
+		return TEAM_SPECTATORS;
+	}
+
 	int aNumplayers[2] = {0,0};
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{

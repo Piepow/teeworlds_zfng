@@ -141,6 +141,9 @@ public:
 
 		bool m_WasInfected;
 
+		// Needed to keep spectators in spec when changing map
+		bool m_WasSpectating;
+
 		void Reset(bool ChoseToDisconnect = true);
 	};
 
@@ -284,6 +287,9 @@ public:
 	virtual void RememberInfection(int ClientID);
 	virtual void ForgetAllInfections();
 	virtual bool WasClientInfectedBefore(int ClientID);
+
+	virtual bool WasClientSpectating(int ClientID);
+	virtual void SetWasClientSpectating(int ClientID, bool Value);
 };
 
 #endif

@@ -2583,3 +2583,13 @@ bool CServer::WasClientInfectedBefore(int ClientID)
 {
 	return m_aClients[ClientID].m_WasInfected;
 }
+
+bool CServer::WasClientSpectating(int ClientID)
+{
+	return m_aClients[ClientID].m_WasSpectating;
+}
+
+void CServer::SetWasClientSpectating(int ClientID, bool Value)
+{
+	m_aClients[ClientID].m_WasSpectating = Value;
+}

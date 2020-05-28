@@ -794,6 +794,10 @@ bool CGameControllerZFNG::IsInfectionStarted()
 
 int CGameControllerZFNG::GetAutoTeam(int NotThisID)
 {
+	if (Server()->WasClientSpectating(NotThisID)) {
+		return TEAM_SPECTATORS;
+	}
+
 	int result;
 	if (IsInfectionStarted()) {
 		result = TEAM_INFECTED;

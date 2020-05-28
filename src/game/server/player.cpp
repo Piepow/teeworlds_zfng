@@ -430,6 +430,10 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg, bool Respawn)
 			if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->m_SpectatorID == m_ClientID)
 				GameServer()->m_apPlayers[i]->m_SpectatorID = SPEC_FREEVIEW;
 		}
+
+		Server()->SetWasClientSpectating(m_ClientID, true);
+	} else {
+		Server()->SetWasClientSpectating(m_ClientID, false);
 	}
 }
 

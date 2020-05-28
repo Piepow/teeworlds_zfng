@@ -106,6 +106,9 @@ public:
 	virtual void ForgetAllInfections() = 0;
 	virtual bool WasClientInfectedBefore(int ClientID) = 0;
 
+	virtual bool WasClientSpectating(int ClientID) = 0;
+	virtual void SetWasClientSpectating(int ClientID, bool Value) = 0;
+
 	virtual int StartGameServer(const char* pMap, struct CConfiguration* pConfig = 0) = 0;
 	virtual void StopGameServer(int GameID, int MoveToGameID = -1) = 0;
 	virtual bool ChangeGameServerMap(int GameID, const char* pMapName) = 0;
