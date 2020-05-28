@@ -772,11 +772,17 @@ bool CGameControllerZFNG::IsInfectionStarted()
 
 int CGameControllerZFNG::GetAutoTeam(int NotThisID)
 {
+	int result;
 	if (IsInfectionStarted()) {
-		return TEAM_INFECTED;
+		result = TEAM_INFECTED;
 	} else {
-		return TEAM_HUMAN;
+		result = TEAM_HUMAN;
 	}
+
+	if (CanJoinTeam(result, NotThisID))
+		return result;
+	else
+		return -1;
 }
 
 bool CGameControllerZFNG::CanChangeTeam(CPlayer *pPlayer, int JoinTeam)
