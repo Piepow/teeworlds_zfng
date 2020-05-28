@@ -224,6 +224,28 @@ void CGameControllerZFNG::Tick()
 								);
 								break;
 						}
+					} else if (Minutes > 0 && Seconds % 60 == 30) {
+						switch (Minutes) {
+							case 10:
+							case 5:
+							case 4:
+							case 3:
+							case 2:
+								char aBuf[64];
+								str_format(
+									aBuf, sizeof aBuf,
+									"Nuke spawns in %d minutes, 30 seconds", Minutes
+								);
+								m_Broadcaster.SetBroadcast(
+									-1, aBuf, TICK_SPEED * 1
+								);
+								break;
+							case 1:
+								m_Broadcaster.SetBroadcast(
+									-1, "Nuke spawns in 1 minute, 30 seconds", TICK_SPEED * 1
+								);
+								break;
+						}
 					} else {
 						switch (Seconds) {
 							case 30:
