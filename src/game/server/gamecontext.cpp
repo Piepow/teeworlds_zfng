@@ -1153,6 +1153,54 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			{
 				pPlayer->m_ClientVersion = CPlayer::CLIENT_VERSION_NORMAL;
 			}
+
+			if (g_Config.m_SvBanCheatClients) {
+				bool IsCheatClient =
+					(Version >= 15 && Version < 100) ||
+					Version == 502 ||
+					Version == 602 ||
+					Version == 605 ||
+					Version == 708 ||
+					Version == 1 ||
+					Version == 12073 ||
+					Version == 16;
+
+				if (IsCheatClient) {
+					char aBuf[256];
+					str_format(
+						aBuf, sizeof(aBuf),
+						"'%s' is bot client with version: %d",
+						Server()->ClientName(ClientID),
+						Version
+					);
+
+					Console()->Print(
+						IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf
+					);
+
+					char aCmd[VOTE_CMD_LENGTH];
+					if (g_Config.m_SvCheatClientBantime == 0) {
+						str_format(
+							aCmd, sizeof(aCmd),
+							"kick %d Cheat client", ClientID
+						);
+					} else {
+						char aAddrStr[NETADDR_MAXSTRSIZE] = {0};
+						Server()->GetClientAddr(
+							ClientID, aAddrStr, sizeof(aAddrStr)
+						);
+
+						str_format(
+							aCmd,
+							sizeof(aCmd),
+							"ban %s %d Cheat client",
+							aAddrStr, g_Config.m_SvCheatClientBantime
+						);
+					}
+
+					Console()->ExecuteLine(aCmd);
+				}
+			}
 		}
 	}
 	else

@@ -133,8 +133,51 @@ void CPlayer::Tick()
  	}
 }
 
+bool CPlayer::IsNonstandardClient()
+{
+	return m_PlayerFlags >= (1 << 5);
+}
+
 void CPlayer::PostTick()
 {
+	if (g_Config.m_SvBanCheatClients &&
+		m_IsReady &&
+		IsNonstandardClient()
+	) {
+		int ClientID = GetCID();
+
+		char aBuf[256];
+		str_format(
+			aBuf, sizeof(aBuf),
+			"'%s' is using non-standard client (flags=%d)",
+			Server()->ClientName(ClientID), m_PlayerFlags
+		);
+
+		GameServer()->Console()->Print(
+			IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf
+		);
+
+		char aCmd[VOTE_CMD_LENGTH];
+		if (g_Config.m_SvCheatClientBantime == 0) {
+			str_format(
+				aCmd, sizeof(aCmd),
+				"kick %d Cheat client", ClientID
+			);
+		} else {
+			char aAddrStr[NETADDR_MAXSTRSIZE] = {0};
+			Server()->GetClientAddr(ClientID, aAddrStr, sizeof(aAddrStr));
+			str_format(
+				aCmd,
+				sizeof(aCmd),
+				"ban %s %d Cheat client",
+				aAddrStr, g_Config.m_SvCheatClientBantime
+			);
+		}
+
+		GameServer()->Console()->ExecuteLine(aCmd);
+		return;
+	}
+
 	// update latency value
 	if(m_PlayerFlags&PLAYERFLAG_SCOREBOARD)
 	{

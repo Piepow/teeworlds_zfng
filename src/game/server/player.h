@@ -37,6 +37,8 @@ public:
 	void PostTick();
 	void Snap(int SnappingClient);
 
+	bool IsNonstandardClient();
+
 	void OnDirectInput(CNetObj_PlayerInput *NewInput);
 	void OnPredictedInput(CNetObj_PlayerInput *NewInput);
 	void OnDisconnect(const char *pReason);
