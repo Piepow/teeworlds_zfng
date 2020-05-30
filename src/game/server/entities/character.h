@@ -93,6 +93,7 @@ private:
 		int m_AmmoRegenStart;
 		int m_Ammo;
 		int m_Ammocost;
+		int m_ReloadTimer;
 		bool m_Got;
 
 	} m_aWeapons[NUM_WEAPONS];
