@@ -73,7 +73,12 @@ MACRO_CONFIG_INT(SvDelayBetweenRounds, sv_delay_between_rounds, 5, 0, 1000, CFGF
 
 MACRO_CONFIG_INT(SvZFNGMinPlayers, sv_zfng_min_players, 2, 2, 1000, CFGFLAG_SERVER, "Minimum number of players needed to start a round of zfng")
 MACRO_CONFIG_INT(SvZFNGInfectionDelay, sv_zfng_infection_delay, 5, 0, 1000, CFGFLAG_SERVER, "Delay in seconds before infection begins")
-MACRO_CONFIG_INT(SvZFNGNukeDelay, sv_zfng_nuke_delay, 125, 0, 1000, CFGFLAG_SERVER, "Delay in seconds before the nuke appears")
+MACRO_CONFIG_INT(SvZFNGNukeDelay, sv_zfng_nuke_delay, 15, 0, 1000, CFGFLAG_SERVER, "Delay in seconds before the nuke appears")
+MACRO_CONFIG_INT(SvZFNGSwapFlags, sv_zfng_swap_flags, 0, 0, 1, CFGFLAG_SERVER, "Swap flags (by default, nuke spawns at blue flag stand)")
+MACRO_CONFIG_INT(SvZFNGExplain, sv_zfng_explain, 1, 0, 1, CFGFLAG_SERVER, "Explain to players to what to do")
+MACRO_CONFIG_INT(SvZFNGInfectionDenominator, sv_zfng_infection_denominator, 3, 2, 1000, CFGFLAG_SERVER, "Infect the reciprocal number of players at the start")
+
+MACRO_CONFIG_INT(SvExecuteMapCfgs, sv_execute_map_cfgs, 0, 0, 1, CFGFLAG_SERVER, "Execute map-specific cfgs when the server loads the map")
 
 MACRO_CONFIG_INT(SvRespawnDelayTDM, sv_respawn_delay_tdm, 3, 0, 10, CFGFLAG_SERVER, "Time needed to respawn after death in tdm gametype")
 

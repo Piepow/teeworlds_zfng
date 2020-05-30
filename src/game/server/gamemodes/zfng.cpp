@@ -77,7 +77,7 @@ void CGameControllerZFNG::SetGameState(EGameState GameState)
 		case IGS_NUKE_DETONATED:
 			m_Nuke = new CNuke(
 				GameServer(),
-				m_aFlagStandPositions[TEAM_HUMAN]
+				m_aFlagStandPositions[NukeDetonatorTeam()]
 			);
 			m_GameStateTimer = TIMER_INFINITE;
 			break;
@@ -143,6 +143,10 @@ void CGameControllerZFNG::Tick()
 		{
 			case IGS_WAITING_FOR_INFECTION:
 				DoInitialInfections();
+
+				if (g_Config.m_SvZFNGExplain)
+					ExplainWaitingNuke();
+
 				m_InfectionStartTick = TICK;
 				SetGameState(IGS_WAITING_FLAG);
 				break;
@@ -380,7 +384,7 @@ void CGameControllerZFNG::DoFlag()
 
 		float CaptureDistance = distance(
 			m_pFlag->m_Pos,
-			m_aFlagStandPositions[TEAM_HUMAN]
+			m_aFlagStandPositions[NukeDetonatorTeam()]
 		);
 		float MaxCaptureDistance = CFlag::ms_PhysSize + CCharacter::ms_PhysSize;
 		if (CaptureDistance < MaxCaptureDistance) {
@@ -603,6 +607,16 @@ void CGameControllerZFNG::Snap(int SnappingClient)
 	pGameDataObj->m_FlagCarrierRed = FLAG_MISSING;
 }
 
+int CGameControllerZFNG::NukeStandTeam()
+{
+	return g_Config.m_SvZFNGSwapFlags ? TEAM_RED : TEAM_BLUE;
+}
+
+int CGameControllerZFNG::NukeDetonatorTeam()
+{
+	return g_Config.m_SvZFNGSwapFlags ? TEAM_BLUE : TEAM_RED;
+}
+
 bool CGameControllerZFNG::OnEntity(int Index, vec2 Pos)
 {
 	if (IGameController::OnEntity(Index, Pos))
@@ -610,12 +624,10 @@ bool CGameControllerZFNG::OnEntity(int Index, vec2 Pos)
 
 	switch (Index) {
 		case ENTITY_FLAGSTAND_RED:
-			m_aFlagStandPositions[TEAM_RED] = Pos;
-			SpawnFlagStand(TEAM_RED);
+			SpawnFlagStand(TEAM_RED, Pos);
 			return true;
 		case ENTITY_FLAGSTAND_BLUE:
-			m_aFlagStandPositions[TEAM_BLUE] = Pos;
-			SpawnFlagStand(TEAM_BLUE);
+			SpawnFlagStand(TEAM_BLUE, Pos);
 			return true;
 	}
 
@@ -864,20 +876,17 @@ void CGameControllerZFNG::CountPlayers() {
 
 }
 
-int CGameControllerZFNG::CalcMinimumInfected() {
-	if (m_NumHumans + m_NumInfected <= 1)
-		return 0;
-	else if (m_NumHumans + m_NumInfected <= 3)
-		return 1;
-	else
-		return 2;
+int CGameControllerZFNG::CalcNumInitialInfections() {
+	int NumPlayers = m_NumHumans + m_NumInfected;
+	return max(1, NumPlayers / g_Config.m_SvZFNGInfectionDenominator);
 }
 
 void CGameControllerZFNG::SpawnFlag()
 {
-	if (m_aFlagStandPositions[TEAM_INFECTED] != NULL) {
+	int Team = NukeStandTeam();
+	if (m_aFlagStandPositions[Team] != NULL) {
 		m_pFlag = new CFlag(&GameServer()->m_World, TEAM_INFECTED);
-		vec2 StandPos = m_aFlagStandPositions[TEAM_INFECTED];
+		vec2 StandPos = m_aFlagStandPositions[Team];
 		m_pFlag->m_StandPos = StandPos;
 		m_pFlag->m_Pos = StandPos;
 		GameServer()->m_World.InsertEntity(m_pFlag);
@@ -886,10 +895,77 @@ void CGameControllerZFNG::SpawnFlag()
 
 void CGameControllerZFNG::AnnounceNuke()
 {
-	m_Broadcaster.SetBroadcast(
-		-1, "The nuke has spawned in the zombie base", TICK_SPEED * 3
-	);
+	if (NukeStandTeam() == TEAM_INFECTED) {
+		m_Broadcaster.SetBroadcast(
+			-1, "The nuke has spawned in the zombie base", TICK_SPEED * 3
+		);
+	} else {
+		m_Broadcaster.SetBroadcast(
+			-1, "The nuke has spawned in the human base", TICK_SPEED * 3
+		);
+	}
+
+	if (g_Config.m_SvZFNGExplain)
+		ExplainNukeSpawned();
+
 	GameServer()->CreateSoundGlobal(SOUND_CTF_RETURN);
+}
+
+void CGameControllerZFNG::ExplainWaitingNuke()
+{
+	if (g_Config.m_SvZFNGNukeDelay > 10)
+		return;
+
+	if (g_Config.m_SvZFNGSwapFlags) {
+		GameServer()->SendChat(
+			-1,
+			NukeDetonatorTeam(), // TEAM_INFECTED
+			"• Infect as many humans as you can before the nuke spawns!"
+		);
+		GameServer()->SendChat(
+			-1,
+			NukeStandTeam(), // TEAM_HUMAN
+			"• Defend your base until the nuke spawns!"
+		);
+	} else {
+		GameServer()->SendChat(
+			-1,
+			NukeDetonatorTeam(), // TEAM_HUMAN
+			"• Survive until the nuke spawns!"
+		);
+		GameServer()->SendChat(
+			-1,
+			NukeStandTeam(), // TEAM_INFECTED
+			"• Infect as many humans as you can before the nuke spawns!"
+		);
+	}
+}
+
+void CGameControllerZFNG::ExplainNukeSpawned()
+{
+	if (g_Config.m_SvZFNGSwapFlags) {
+		GameServer()->SendChat(
+			-1,
+			NukeDetonatorTeam(), // TEAM_INFECTED
+			"• Don't let the humans plant the nuke in your base!"
+		);
+		GameServer()->SendChat(
+			-1,
+			NukeStandTeam(), // TEAM_HUMAN
+			"• Plant the nuke in the zombie base to win!"
+		);
+	} else {
+		GameServer()->SendChat(
+			-1,
+			NukeDetonatorTeam(), // TEAM_HUMAN
+			"• Capture the nuke from the zombies to win!"
+		);
+		GameServer()->SendChat(
+			-1,
+			NukeStandTeam(), // TEAM_INFECTED
+			"• Don't let the humans capture the nuke!"
+		);
+	}
 }
 
 void CGameControllerZFNG::RemoveFlag()
@@ -908,11 +984,16 @@ void CGameControllerZFNG::RemoveNuke()
 	}
 }
 
-void CGameControllerZFNG::SpawnFlagStand(int Team)
+void CGameControllerZFNG::SpawnFlagStand(int Team, vec2 Pos)
 {
-	vec2 StandPos = m_aFlagStandPositions[Team];
-	m_apFlagStands[Team] = new CFlagStand(&GameServer()->m_World, Team);
-	m_apFlagStands[Team]->m_Pos = StandPos;
+	m_aFlagStandPositions[Team] = Pos;
+
+	int FlagStandType = (Team == NukeStandTeam()) ?
+		CFlagStand::NUKE_STAND : CFlagStand::NUKE_DETONATOR;
+
+	m_apFlagStands[Team] = new CFlagStand(&GameServer()->m_World, FlagStandType);
+
+	m_apFlagStands[Team]->m_Pos = Pos;
 	GameServer()->m_World.InsertEntity(m_apFlagStands[Team]);
 }
 
@@ -939,7 +1020,7 @@ void CGameControllerZFNG::FinishOffZombies()
 }
 
 void CGameControllerZFNG::DoInitialInfections() {
-	int NumMinimumInfected = CalcMinimumInfected();
+	int NumMinimumInfected = CalcNumInitialInfections();
 	if (m_NumInfected < NumMinimumInfected) {
 		int NumToInfect = NumMinimumInfected - m_NumInfected;
 		while (NumToInfect > 0)

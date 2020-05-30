@@ -64,11 +64,20 @@ private:
 
 	// Calculate how many tees to infect at the start of a round, which depends
 	// on number of players
-	int CalcMinimumInfected();
+	int CalcNumInitialInfections();
 
 	vec2 m_aFlagStandPositions[2];
 	class CFlagStand* m_apFlagStands[2];
 	class CFlag* m_pFlag;
+
+	// The team of flag that the nuke stand should be
+	int NukeStandTeam();
+	// The team of flag that the nuke detonator should be
+	int NukeDetonatorTeam();
+
+	void ExplainWaitingNuke();
+	void ExplainNukeSpawned();
+
 	void SpawnFlag();
 	void RemoveFlag();
 	void DoFlag();
@@ -78,7 +87,7 @@ private:
 	bool HasFlagHitDeath();
 	void DoDroppedFlag();
 	void DoFlagCapture();
-	void SpawnFlagStand(int Team);
+	void SpawnFlagStand(int Team, vec2 Pos);
 
 	int m_InfectionStartTick;
 	void FinishOffZombies();

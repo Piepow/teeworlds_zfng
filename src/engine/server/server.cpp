@@ -1661,7 +1661,8 @@ int CServer::LoadMap(const char *pMapName)
 		io_close(File);
 	}
 
-	ExecuteMapConfig(pMapName);
+	if (g_Config.m_SvExecuteMapCfgs)
+		ExecuteMapConfig(pMapName);
 
 	return 1;
 }

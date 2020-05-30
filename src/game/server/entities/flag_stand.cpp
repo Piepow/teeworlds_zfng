@@ -7,15 +7,15 @@
 #define TICK_SPEED Server()->TickSpeed()
 #define TICK Server()->Tick()
 
-CFlagStand::CFlagStand(CGameWorld *pGameWorld, int Team) :
+CFlagStand::CFlagStand(CGameWorld *pGameWorld, int Type) :
 	CEntity(pGameWorld, CGameWorld::ENTTYPE_FLAG_STAND)
 {
-	m_Team = Team;
+	m_Type = Type;
 
 	for (int i = 0; i < NUM_OUTER_DOTS; i++)
 		m_aOuterDots[i] = Server()->SnapNewID();
 
-	if (m_Team == TEAM_HUMAN) {
+	if (m_Type == NUKE_DETONATOR) {
 		for (int i = 0; i < NUM_INNER_DOTS; i++)
 			m_aInnerDots[i] = Server()->SnapNewID();
 	}
@@ -26,7 +26,7 @@ CFlagStand::~CFlagStand()
 	for (int i = 0; i < NUM_OUTER_DOTS; ++i)
 		Server()->SnapFreeID(m_aOuterDots[i]);
 
-	if (m_Team == TEAM_HUMAN) {
+	if (m_Type == NUKE_DETONATOR) {
 		for (int i = 0; i < NUM_INNER_DOTS; ++i)
 			Server()->SnapFreeID(m_aInnerDots[i]);
 	}
@@ -39,7 +39,7 @@ void CFlagStand::Snap(int SnappingClient)
 
 	SnapOuterDots();
 
-	if (m_Team == TEAM_HUMAN)
+	if (m_Type == NUKE_DETONATOR)
 		SnapInnerDots();
 }
 
