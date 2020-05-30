@@ -877,8 +877,15 @@ void CGameControllerZFNG::CountPlayers() {
 }
 
 int CGameControllerZFNG::CalcNumInitialInfections() {
-	int NumPlayers = m_NumHumans + m_NumInfected;
-	return max(1, NumPlayers / g_Config.m_SvZFNGInfectionDenominator);
+	int Total = m_NumHumans + m_NumInfected;
+	switch (g_Config.m_SvZFNGInitialInfections) {
+		case 0:
+			return (int)(sqrt(Total * 0.5f));
+		case 1:
+			return (int)(sqrt(Total));
+		case 2:
+			return min((int)(sqrt(Total * 2)), Total - 1);
+	}
 }
 
 void CGameControllerZFNG::SpawnFlag()
@@ -913,7 +920,7 @@ void CGameControllerZFNG::AnnounceNuke()
 
 void CGameControllerZFNG::ExplainWaitingNuke()
 {
-	if (g_Config.m_SvZFNGNukeDelay > 10)
+	if (g_Config.m_SvZFNGNukeDelay <= 10)
 		return;
 
 	if (g_Config.m_SvZFNGSwapFlags) {

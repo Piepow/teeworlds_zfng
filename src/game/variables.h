@@ -76,7 +76,7 @@ MACRO_CONFIG_INT(SvZFNGInfectionDelay, sv_zfng_infection_delay, 5, 0, 1000, CFGF
 MACRO_CONFIG_INT(SvZFNGNukeDelay, sv_zfng_nuke_delay, 15, 0, 1000, CFGFLAG_SERVER, "Delay in seconds before the nuke appears")
 MACRO_CONFIG_INT(SvZFNGSwapFlags, sv_zfng_swap_flags, 0, 0, 1, CFGFLAG_SERVER, "Swap flags (by default, nuke spawns at blue flag stand)")
 MACRO_CONFIG_INT(SvZFNGExplain, sv_zfng_explain, 1, 0, 1, CFGFLAG_SERVER, "Explain to players to what to do")
-MACRO_CONFIG_INT(SvZFNGInfectionDenominator, sv_zfng_infection_denominator, 3, 2, 1000, CFGFLAG_SERVER, "Infect the reciprocal number of players at the start")
+MACRO_CONFIG_INT(SvZFNGInitialInfections, sv_zfng_initial_infections, 1, 0, 2, CFGFLAG_SERVER, "Magnitude of initial infections (0: low, 1: normal, 2: high)")
 
 MACRO_CONFIG_INT(SvExecuteMapCfgs, sv_execute_map_cfgs, 0, 0, 1, CFGFLAG_SERVER, "Execute map-specific cfgs when the server loads the map")
 
