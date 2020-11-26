@@ -443,7 +443,7 @@ bool IGameController::IsFriendlyFire(int ClientID1, int ClientID2)
 
 	if(IsTeamplay())
 	{
-		if (IsInfection() && !IsInfectionStarted()) {
+		if (IsInfection() && IsWaitingForPlayers()) {
 			// Solofng while waiting
 			return false;
 		} else {
@@ -869,6 +869,10 @@ bool IGameController::UseFakeTeams(){
 	return false;
 }
 
+bool IGameController::IsWaitingForPlayers()
+{
+	return false;
+}
 bool IGameController::IsInfectionStarted()
 {
 	return false;

@@ -49,6 +49,7 @@ protected:
 	virtual void StartRound();
 	virtual void EndRound();
 
+	virtual bool IsWaitingForPlayers();
 	virtual bool IsInfectionStarted();
 	virtual int GetAutoTeam(int NotThisID);
 	virtual bool CanChangeTeam(CPlayer* pPlayer, int JoinTeam);

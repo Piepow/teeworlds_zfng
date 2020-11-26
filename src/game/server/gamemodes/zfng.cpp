@@ -790,6 +790,16 @@ void CGameControllerZFNG::AnnounceWinners()
 	GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
 }
 
+bool CGameControllerZFNG::IsWaitingForPlayers()
+{
+	switch (m_GameState) {
+		case IGS_WAITING_FOR_PLAYERS:
+			return true;
+		default:
+			return false;
+	}
+}
+
 bool CGameControllerZFNG::IsInfectionStarted()
 {
 	switch (m_GameState) {

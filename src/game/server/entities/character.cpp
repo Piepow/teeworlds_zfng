@@ -361,7 +361,7 @@ void CCharacter::FireWeapon()
 		{
 			++m_pPlayer->m_Stats.m_Shots;
 			if (GameServer()->m_pController->IsInfection()) {
-				if (GameServer()->m_pController->IsInfectionStarted()) {
+				if (!GameServer()->m_pController->IsWaitingForPlayers()) {
 					if (m_pPlayer->IsInfected()) {
 						new CLaser(GameWorld(), m_Pos, Direction, GameServer()->Tuning()->m_LaserReach, m_pPlayer->GetCID(), LASER_FREEZE);
 					} else {
@@ -835,11 +835,10 @@ void CCharacter::DieSpikes(int pPlayerID, int spikes_flag) {
 
 			if (GameServer()->m_pController->IsInfection())
 			{
-				if (GameServer()->m_pController->IsInfectionStarted()) {
+				// Don't infect anyone when waiting for players
+				if (!GameServer()->m_pController->IsWaitingForPlayers()) {
 					if (!GetPlayer()->IsInfected())
 						GetPlayer()->Infect(true, false);
-				} else {
-					// Waiting for players so don't infect anyone
 				}
 			}
 		}

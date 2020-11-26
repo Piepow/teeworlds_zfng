@@ -158,6 +158,7 @@ public:
 
 	virtual void PostReset();
 
+	virtual bool IsWaitingForPlayers();
 	virtual bool IsInfectionStarted();
 };
 
