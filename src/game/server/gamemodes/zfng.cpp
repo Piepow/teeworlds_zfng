@@ -658,15 +658,12 @@ int CGameControllerZFNG::OnCharacterDeath(
 		pVictim->GetPlayer()->m_Score--; // Suicide
 	} else {
 		if (Weapon == WEAPON_RIFLE || Weapon == WEAPON_GRENADE){
-			if (pVictim->GetPlayer()->GetTeam() == pKiller->GetTeam()) {
-				pKiller->m_Score--; // Teamkill
-			} else {
-				pKiller->m_Score++; // Normal kill
-				if (m_pFlag && m_pFlag->m_pCarryingCharacter == pVictim)
-				{
-					GameServer()->CreateSoundGlobal(SOUND_PLAYER_PAIN_LONG);
-					pKiller->m_Score++; // Froze flag carrier
-				}
+			// Ignore teamkills
+			pKiller->m_Score++; // Normal kill
+			if (m_pFlag && m_pFlag->m_pCarryingCharacter == pVictim)
+			{
+				GameServer()->CreateSoundGlobal(SOUND_PLAYER_PAIN_LONG);
+				pKiller->m_Score++; // Froze flag carrier
 			}
 		} else if (Weapon == WEAPON_SPIKE_NORMAL) {
 			pVictim->GetPlayer()->m_RespawnTick = TICK + TICK_SPEED * 0.5f;

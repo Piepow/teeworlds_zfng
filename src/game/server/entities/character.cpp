@@ -361,10 +361,15 @@ void CCharacter::FireWeapon()
 		{
 			++m_pPlayer->m_Stats.m_Shots;
 			if (GameServer()->m_pController->IsInfection()) {
-				if (m_pPlayer->IsInfected()) {
-					new CLaser(GameWorld(), m_Pos, Direction, GameServer()->Tuning()->m_LaserReach, m_pPlayer->GetCID(), LASER_FREEZE);
+				if (GameServer()->m_pController->IsInfectionStarted()) {
+					if (m_pPlayer->IsInfected()) {
+						new CLaser(GameWorld(), m_Pos, Direction, GameServer()->Tuning()->m_LaserReach, m_pPlayer->GetCID(), LASER_FREEZE);
+					} else {
+						new CLaser(GameWorld(), m_Pos, Direction, GameServer()->Tuning()->m_LaserReach, m_pPlayer->GetCID(), LASER_INSTA);
+					}
 				} else {
-					new CLaser(GameWorld(), m_Pos, Direction, GameServer()->Tuning()->m_LaserReach, m_pPlayer->GetCID(), LASER_INSTA);
+					// Waiting for players, so just have normal fng
+					new CLaser(GameWorld(), m_Pos, Direction, GameServer()->Tuning()->m_LaserReach, m_pPlayer->GetCID(), LASER_FREEZE);
 				}
 			} else {
 				new CLaser(GameWorld(), m_Pos, Direction, GameServer()->Tuning()->m_LaserReach, m_pPlayer->GetCID(), LASER_FREEZE);
@@ -830,8 +835,12 @@ void CCharacter::DieSpikes(int pPlayerID, int spikes_flag) {
 
 			if (GameServer()->m_pController->IsInfection())
 			{
-				if (!GetPlayer()->IsInfected())
-					GetPlayer()->Infect(true, false);
+				if (GameServer()->m_pController->IsInfectionStarted()) {
+					if (!GetPlayer()->IsInfected())
+						GetPlayer()->Infect(true, false);
+				} else {
+					// Waiting for players so don't infect anyone
+				}
 			}
 		}
 		//if not frozen or selfkill

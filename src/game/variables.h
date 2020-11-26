@@ -71,7 +71,7 @@ MACRO_CONFIG_INT(SvTournamentMode, sv_tournament_mode, 0, 0, 1, CFGFLAG_SERVER, 
 MACRO_CONFIG_INT(SvSpamprotection, sv_spamprotection, 1, 0, 1, CFGFLAG_SERVER, "Spam protection")
 MACRO_CONFIG_INT(SvDelayBetweenRounds, sv_delay_between_rounds, 5, 0, 1000, CFGFLAG_SERVER, "Delay in seconds between rounds")
 
-MACRO_CONFIG_INT(SvZFNGMinPlayers, sv_zfng_min_players, 2, 2, 1000, CFGFLAG_SERVER, "Minimum number of players needed to start a round of zfng")
+MACRO_CONFIG_INT(SvZFNGMinPlayers, sv_zfng_min_players, 4, 2, 1000, CFGFLAG_SERVER, "Minimum number of players needed to start a round of zfng")
 MACRO_CONFIG_INT(SvZFNGInfectionDelay, sv_zfng_infection_delay, 5, 0, 1000, CFGFLAG_SERVER, "Delay in seconds before infection begins")
 MACRO_CONFIG_INT(SvZFNGNukeDelay, sv_zfng_nuke_delay, 12, 0, 1000, CFGFLAG_SERVER, "Delay in seconds before the nuke appears")
 MACRO_CONFIG_INT(SvZFNGSwapFlags, sv_zfng_swap_flags, 0, 0, 1, CFGFLAG_SERVER, "Swap flags (by default, nuke spawns at blue flag stand)")

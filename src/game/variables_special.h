@@ -16,7 +16,7 @@ MACRO_CONFIG_INT(SvPlayerScoreSpikeGold, sv_player_score_gold, 7, 0, 100, CFGFLA
 MACRO_CONFIG_INT(SvPlayerScoreSpikeFalse, sv_player_score_false, -5, -100, 0, CFGFLAG_SERVER, "Points a player receives for grabbing into opponents spikes")
 
 MACRO_CONFIG_INT(SvFalseSpikeFreeze, sv_false_spike_freeze, 5, 0, 60, CFGFLAG_SERVER, "The time, in seconds, a player gets frozen, if he grabbed a frozen opponent into the opponents spikes")
-MACRO_CONFIG_INT(SvHitFreeze, sv_hit_freeze, 10, 0, 60, CFGFLAG_SERVER, "The time, in seconds, a player gets frozen, if he gets shot")
+MACRO_CONFIG_INT(SvHitFreeze, sv_hit_freeze, 5, 0, 60, CFGFLAG_SERVER, "The time, in seconds, a player gets frozen, if he gets shot")
 
 MACRO_CONFIG_INT(SvEmoticonDelay, sv_emoticon_delay, 3, 0, 10, CFGFLAG_SERVER, "The delay a player can use emotes")
 MACRO_CONFIG_INT(SvKillDelay, sv_kill_delay, 3, -1, 10, CFGFLAG_SERVER, "The delay a player can kill it's character")

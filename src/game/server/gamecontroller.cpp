@@ -443,8 +443,13 @@ bool IGameController::IsFriendlyFire(int ClientID1, int ClientID2)
 
 	if(IsTeamplay())
 	{
-		if(GameServer()->m_apPlayers[ClientID1]->GetTeam() == GameServer()->m_apPlayers[ClientID2]->GetTeam())
-			return true;
+		if (IsInfection() && !IsInfectionStarted()) {
+			// Solofng while waiting
+			return false;
+		} else {
+			if(GameServer()->m_apPlayers[ClientID1]->GetTeam() == GameServer()->m_apPlayers[ClientID2]->GetTeam())
+				return true;
+		}
 	}
 
 	return false;
