@@ -355,7 +355,7 @@ void IGameController::PostReset()
 void IGameController::OnPlayerInfoChange(class CPlayer *pP)
 {
 	const int aTeamColors[2] = {65387, 10223467};
-	if(IsTeamplay())
+	if(IsTeamplay() && !IsInfection())
 	{
 		pP->m_TeeInfos.m_UseCustomColor = 1;
 		if(pP->GetTeam() >= TEAM_RED && pP->GetTeam() <= TEAM_BLUE)

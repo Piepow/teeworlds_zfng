@@ -214,14 +214,21 @@ void CPlayer::Snap(int SnappingClient)
 
 	StrToInts(&pClientInfo->m_Skin0, 6, m_TeeInfos.m_SkinName);
 	if (GameServer()->m_pController->IsInfection()) {
-		if (IsInfected()) {
-			pClientInfo->m_UseCustomColor = true;
-			pClientInfo->m_ColorBody = 3866368;
-			pClientInfo->m_ColorFeet = 65414;
+		if (GameServer()->m_pController->IsWaitingForPlayers()) {
+			pClientInfo->m_UseCustomColor = m_TeeInfos.m_UseCustomColor;
+			pClientInfo->m_ColorBody = m_TeeInfos.m_ColorBody;
+			pClientInfo->m_ColorFeet = m_TeeInfos.m_ColorFeet;
 		} else {
-			pClientInfo->m_UseCustomColor = true;
-			pClientInfo->m_ColorBody = 1559776;
-			pClientInfo->m_ColorFeet = 9298431;
+			if (IsInfected()) {
+				pClientInfo->m_UseCustomColor = true;
+				pClientInfo->m_ColorBody = 3866368;
+				pClientInfo->m_ColorFeet = 65414;
+			} else {
+				pClientInfo->m_UseCustomColor = true;
+				pClientInfo->m_ColorBody = 1559776;
+				pClientInfo->m_ColorFeet = 9298431;
+			}
+
 		}
 	} else {
 		pClientInfo->m_UseCustomColor = m_TeeInfos.m_UseCustomColor;
