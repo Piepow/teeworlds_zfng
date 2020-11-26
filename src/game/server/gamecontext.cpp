@@ -128,7 +128,10 @@ void CGameContext::CreateDamageInd(vec2 Pos, float Angle, int Amount, int Team, 
 	float s = a - pi / 3;
 	float e = a + pi / 3;
 
-	if(m_pController->IsTeamplay()){
+	if(
+		m_pController->IsTeamplay() &&
+		!(m_pController->IsInfection() && m_pController->IsWaitingForPlayers())
+	){
 		QuadroMask mask = 0;
 		for (int i = 0; i < MAX_CLIENTS; i++) {
 			if (m_apPlayers[i] && m_apPlayers[i]->GetTeam() == Team) mask |= CmaskOne(i);
